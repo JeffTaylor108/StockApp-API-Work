@@ -7,7 +7,7 @@ import threading
 from app import StockApp
 from account_data import account_summary_testing
 from contract_data import req_contract_from_symbol
-from market_data import get_live_volume, stop_mkt_data_stream
+from market_data import get_live_volume, get_live_price
 from orders import buy_stock, sell_stock
 
 
@@ -35,6 +35,11 @@ def main():
         contract = req_contract_from_symbol(app)
         print(contract)
         get_live_volume(app, contract)
+
+    if testing == "get_live_price":
+        contract = req_contract_from_symbol(app)
+        print(contract.symbol)
+        get_live_price(app, contract)
 
     if testing == "buy_stock":
         buy_stock(app)

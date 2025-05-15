@@ -25,3 +25,4 @@ def get_live_volume(app, contract):
     app.desired_tick = 74
 
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
+
