@@ -6,6 +6,10 @@ import time
 import threading
 from app import StockApp
 from account_data import account_summary_testing
+from contract_data import req_contract_from_symbol
+from market_data import get_live_volume, stop_mkt_data_stream
+from orders import buy_stock, sell_stock
+
 
 def main():
 
@@ -21,9 +25,22 @@ def main():
     # checks if app connected
     print(f"App is connected: {app.isConnected()}")
 
-    # method logic goes here
-    account_summary_testing(app)
+    # initializes order reqIds for session
+    app.reqIds(-1)
 
+    # method logic goes here
+    testing = input("What stub do you want to test? ")
+
+    if testing == "get_live_volume":
+        contract = req_contract_from_symbol(app)
+        print(contract)
+        get_live_volume(app, contract)
+
+    if testing == "buy_stock":
+        buy_stock(app)
+
+    if testing == "sell_stock":
+        sell_stock(app)
 
 if __name__ == "__main__":
     main()

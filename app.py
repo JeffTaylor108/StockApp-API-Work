@@ -16,6 +16,16 @@ class StockApp(EWrapper, EClient):
         self.nextOrderId = None
         self.nextReqId = 1
 
+        self.desired_tick = None
+
+        # threading events for buying a stock
+        self.find_matching_contract_event = threading.Event()
+        self.matching_contract = None
+        self.latest_bid_price = None
+
+        # threading events for getting volume of stock
+        self.trading_volume = None
+
     # generates reqIds for internal use
     def getNextReqId(self):
         reqId = self.nextReqId
@@ -43,11 +53,20 @@ class StockApp(EWrapper, EClient):
 
         # extracts Contract object from contractDescriptions
         con = (contractDescriptions[0].contract)
+
+        if con:
+            self.matching_contract = con
+            self.find_matching_contract_event.set()
+        else:
+            print("No matching contracts found")
+            self.find_matching_contract_event.set()
+
         stock_details_string = (f"conId: {con.conId}, secType: {con.secType} symbol: {con.symbol}, "
                                 f"exchange: {con.exchange}, primary exchange: {con.primaryExchange}, "
                                 f"currency: {con.currency}, description: {con.description}")
 
         print(f"Stock Symbol details: reqId: {reqId}, stock details: {stock_details_string}")
+
 
     # defines response for reqContractDetails
     def contractDetails(self, reqId, contractDetails):
@@ -67,14 +86,24 @@ class StockApp(EWrapper, EClient):
     def marketDataType(self, reqId, marketDataType):
         print(f"Market Data Type: {marketDataType}")
 
-    # defines response for tick price values (to print specific data, us 'if tickType == ...' statements and refer to docs)
+    # defines response for tick price values (to print specific data, use 'if tickType == ...' statements and refer to docs)
     # tickList docs: https://ibkrcampus.com/campus/ibkr-api-page/twsapi-doc/#available-tick-types
     def tickPrice(self, reqId, tickType, price, attrib):
-        print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
+        if tickType == 68 and self.desired_tick == 68:
+            self.latest_bid_price = price
+            print(f"Last bid price: {price}")
+
+        # commented out for refactoring
+        # print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
 
     # same as tickPrice
     def tickSize(self, reqId, tickType, size):
-        print(f"Tick Size: reqId: {reqId}, tickType: {tickType}, size: {size}")
+        if tickType == 74 and self.desired_tick == 74:
+            self.trading_volume = size
+            print(f"Trading volume for day: {size}")
+
+        # commented out for refactoring
+        # print(f"Tick Size: reqId: {reqId}, tickType: {tickType}, size: {size}")
 
     #--------------------------------News Endpoint--------------------------------------------------------------------
 
