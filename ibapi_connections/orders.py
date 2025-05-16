@@ -1,9 +1,8 @@
 import time
 from ibapi.order import *
-from ibapi.contract import *
 
-from contract_data import req_contract_from_symbol
-from market_data import get_live_price, stop_mkt_data_stream
+from ibapi_connections.contract_data import req_contract_from_symbol
+from ibapi_connections.market_data import get_live_price, stop_mkt_data_stream
 
 
 # testing interactions with buying/selling stocks
@@ -37,9 +36,38 @@ def sell_order_testing(app, contract):
 
     app.placeOrder(app.nextOrderId, contract, order)
 
-# method for buying a stock
+
+
+def buy_stock(app, contract, quantity):
+
+    while app.nextOrderId is None:
+        time.sleep(0.1)
+
+    order = Order()
+    order.orderId = app.nextOrderId
+    order.action = "BUY"
+    order.orderType = "MKT"
+    order.totalQuantity = quantity
+
+    app.placeOrder(app.nextOrderId, contract, order)
+
+def sell_stock(app, contract, quantity):
+
+    while app.nextOrderId is None:
+        time.sleep(0.1)
+
+    order = Order()
+    order.orderId = app.nextOrderId
+    order.action = "SELL"
+    order.orderType = "MKT"
+    order.totalQuantity = quantity
+
+    app.placeOrder(app.nextOrderId, contract, order)
+
+
+# old method for buying a stock, don't use, only keeping to potentially leverage some logic
 # flow: input stock symbol, see current price, confirm/deny purchase
-def buy_stock(app):
+def deprecated_buy_stock(app):
 
     contract = req_contract_from_symbol(app)
     print(contract)
@@ -67,7 +95,7 @@ def buy_stock(app):
     else:
         print("Order cancelled")
 
-def sell_stock(app):
+def deprecated_sell_stock(app):
 
     contract = req_contract_from_symbol(app)
     print(contract)

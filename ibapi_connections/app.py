@@ -26,6 +26,11 @@ class StockApp(EWrapper, EClient):
         # threading events for getting volume of stock
         self.trading_volume = None
 
+        # variables for news data
+        self.find_articles_event = threading.Event()
+        self.headlines_found = []
+        self.articles_found = []
+
     # generates reqIds for internal use
     def getNextReqId(self):
         reqId = self.nextReqId
@@ -119,7 +124,9 @@ class StockApp(EWrapper, EClient):
 
     # defines response for reqHistoricalNews
     def historicalNews(self, reqId, time, providerCode, articleId, headline):
-        print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
+        # print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
+        self.headlines_found.append(headline)
+        self.find_articles_event.set()
 
     def historicalDataEnd(self, reqId, hasMore):
         print("All historical news displayed for: ", reqId, "More data to display:", hasMore)
