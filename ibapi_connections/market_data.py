@@ -7,11 +7,9 @@ def market_data_testing(app, contract):
     # procedurally retrieves data for every tickType in genericTickList
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 
-# gets live price of contract
-def get_live_price(app, contract):
+# gets live bid, ask, and last traded prices of contract
+def get_live_prices(app, contract):
     app.reqMarketDataType(3)
-    app.desired_tick = 68
-
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 
 # ends market data stream
@@ -22,7 +20,5 @@ def stop_mkt_data_stream(app, reqId):
 # gets live volume of contract
 def get_live_volume(app, contract):
     app.reqMarketDataType(3)
-    app.desired_tick = 74
-
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 

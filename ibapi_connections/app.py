@@ -4,24 +4,37 @@ from ibapi.contract import *
 import time
 from ibapi.order import *
 import threading
+from PyQt6.QtCore import pyqtSignal, QObject
 
 
 # EClient is used to send requests to TWS, EWrapper is used to receive responses from TWS
 
 # class that instantiates EWrapper and EClient
 # all methods must be redefined for inheritance in class
-class StockApp(EWrapper, EClient):
+class StockApp(EWrapper, EClient, QObject):
+
+    # creates a signal that triggers whenever method.emit() is called
+    connected = pyqtSignal()
+    stock_prices_updated = pyqtSignal()
+
     def __init__(self):
         EClient.__init__(self, self)
+        QObject.__init__(self)
         self.nextOrderId = None
         self.nextReqId = 1
 
-        self.desired_tick = None
+        # variables for stock data
+        self.bid_price = None
+        self.ask_price = None
+        self.last_traded_price = None
+        self.high_price = None
+        self.low_price = None
+        self.open_price = None
+        self.close_price = None
 
         # threading events for buying a stock
         self.find_matching_contract_event = threading.Event()
         self.matching_contract = None
-        self.latest_bid_price = None
 
         # threading events for getting volume of stock
         self.trading_volume = None
@@ -40,6 +53,8 @@ class StockApp(EWrapper, EClient):
     # generates next valid id for orders through app.reqIds and sets nextOrderId to it
     def nextValidId(self, orderId):
         self.nextOrderId = orderId
+        self.connected.emit()
+        self.reqIds(-1)
 
     # -------------------------------------Account Endpoint------------------------------------------------------------
 
@@ -57,7 +72,7 @@ class StockApp(EWrapper, EClient):
     def symbolSamples(self, reqId, contractDescriptions):
 
         # extracts Contract object from contractDescriptions
-        con = (contractDescriptions[0].contract)
+        con = contractDescriptions[0].contract
 
         if con:
             self.matching_contract = con
@@ -94,16 +109,45 @@ class StockApp(EWrapper, EClient):
     # defines response for tick price values (to print specific data, use 'if tickType == ...' statements and refer to docs)
     # tickList docs: https://ibkrcampus.com/campus/ibkr-api-page/twsapi-doc/#available-tick-types
     def tickPrice(self, reqId, tickType, price, attrib):
-        if tickType == 68 and self.desired_tick == 68:
-            self.latest_bid_price = price
-            print(f"Last bid price: {price}")
+
+        if tickType == 66:
+            self.bid_price = price
+            print(f"Bid price: {price}")
+
+        elif tickType == 67:
+            self.ask_price = price
+            print(f"Ask price: {price}")
+
+        elif tickType == 68:
+            self.last_traded_price = price
+            print(f"Last traded price: {price}")
+
+        elif tickType == 72:
+            self.high_price = price
+            print(f"High price: {price}")
+
+        elif tickType == 73:
+            self.low_price = price
+            print(f"Low traded price: {price}")
+
+        elif tickType == 75:
+            self.close_price = price
+            print(f"Closing price: {price}")
+
+        elif tickType == 76:
+            self.open_price = price
+            print(f"Opening price: {price}")
+
+        # emits signal to trigger an event
+        self.stock_prices_updated.emit()
 
         # commented out for refactoring
         # print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
 
     # same as tickPrice
     def tickSize(self, reqId, tickType, size):
-        if tickType == 74 and self.desired_tick == 74:
+
+        if tickType == 74:
             self.trading_volume = size
             print(f"Trading volume for day: {size}")
 

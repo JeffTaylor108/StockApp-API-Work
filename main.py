@@ -2,11 +2,12 @@ import sys
 import time
 import threading
 
+from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QApplication
 
 from ibapi_connections.app import StockApp
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_volume, get_live_price
+from ibapi_connections.market_data import get_live_volume, get_live_prices
 from ibapi_connections.orders import buy_stock, deprecated_buy_stock, deprecated_sell_stock
 from gui.main_window import MainWindow
 
@@ -16,17 +17,15 @@ def main():
     # connects to TWS API on port 7497 (paper trading)
     app = StockApp()
     app.connect("127.0.0.1", 7497, 0)
-    time.sleep(1)
 
     # starts app
-    api_thread = threading.Thread(target=app.run, daemon=True)
-    api_thread.start()
+    thread = QThread()
+    app.moveToThread(thread)
+    thread.started.connect(app.run)
+    thread.start()
 
     # checks if app connected
     print(f"App is connected: {app.isConnected()}")
-
-    # initializes order reqIds for session
-    app.reqIds(-1)
 
     # initalizing GUI
     gui = QApplication(sys.argv)
@@ -52,7 +51,7 @@ def testing(app):
     if testing == "get_live_price":
         contract = req_contract_from_symbol(app)
         print(contract.symbol)
-        get_live_price(app, contract)
+        get_live_prices(app, contract)
 
     if testing == "buy_stock":
         deprecated_buy_stock(app)

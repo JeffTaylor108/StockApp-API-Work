@@ -6,8 +6,9 @@ import sys
 
 from ibapi.contract import Contract
 
+from gui.order_entry_widget import OrderEntryWidget
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_price, get_live_volume
+from ibapi_connections.market_data import get_live_prices, get_live_volume
 from ibapi_connections.news import get_news_headlines
 from ibapi_connections.orders import buy_stock, sell_stock
 
@@ -32,9 +33,9 @@ class MainWindow(QMainWindow):
         self.get_news_button.clicked.connect(self.get_news)
 
         # create divider
-        self.line = QFrame()
-        self.line.setFrameShape(QFrame.Shape.HLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.buy_sell_label = QLabel("Buying/Selling stock input")
         self.buy_sell_input = QLineEdit()
@@ -52,11 +53,21 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.get_price_button)
         layout.addWidget(self.get_volume_button)
         layout.addWidget(self.get_news_button)
-        layout.addWidget(self.line)
+        layout.addWidget(line)
         layout.addWidget(self.buy_sell_label)
         layout.addWidget(self.buy_sell_input)
         layout.addWidget(self.buy_stock_button)
         layout.addWidget(self.sell_stock_button)
+
+        # Order Entry widget
+        for _ in range(4):
+            divider_line = QFrame()
+            divider_line.setFrameShape(QFrame.Shape.HLine)
+            divider_line.setFrameShadow(QFrame.Shadow.Sunken)
+            layout.addWidget(divider_line)
+
+        self.order_entry_widget = OrderEntryWidget(app)
+        layout.addWidget(self.order_entry_widget)
 
         # parent widget container for layout
         container = QWidget()
@@ -71,7 +82,7 @@ class MainWindow(QMainWindow):
         symbol = self.input.text().upper()
         contract:Contract = req_contract_from_symbol(self.app, symbol)
         print(contract)
-        get_live_price(self.app, contract)
+        get_live_prices(self.app, contract)
 
     def get_volume(self):
         print("Volume button clicked!")
