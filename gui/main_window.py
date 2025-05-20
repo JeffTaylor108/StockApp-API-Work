@@ -7,6 +7,7 @@ import sys
 from ibapi.contract import Contract
 
 from gui.order_entry_widget import OrderEntryWidget
+from gui.stock_news_widget import StockNewsWidget
 from ibapi_connections.contract_data import req_contract_from_symbol
 from ibapi_connections.market_data import get_live_prices, get_live_volume
 from ibapi_connections.news import get_news_headlines
@@ -20,54 +21,16 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("IB TWS API Trading GUI")
 
         # widgets to be added to layout
-        self.label = QLabel("Enter the stock symbol you would like to see data for: ")
-        self.input = QLineEdit()
+        # Order Entry widget
+        self.order_entry_widget = OrderEntryWidget(app)
 
-        self.get_price_button = QPushButton("Get Price Data")
-        self.get_price_button.clicked.connect(self.get_price)
-
-        self.get_volume_button = QPushButton("Get Volume Data")
-        self.get_volume_button.clicked.connect(self.get_volume)
-
-        self.get_news_button = QPushButton("Get Recent News Headlines")
-        self.get_news_button.clicked.connect(self.get_news)
-
-        # create divider
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.buy_sell_label = QLabel("Buying/Selling stock input")
-        self.buy_sell_input = QLineEdit()
-
-        self.buy_stock_button = QPushButton("Buy")
-        self.buy_stock_button.clicked.connect(self.buy_stock)
-
-        self.sell_stock_button = QPushButton("Sell")
-        self.sell_stock_button.clicked.connect(self.sell_stock)
+        # Stock News widget
+        self.stock_news_widget = StockNewsWidget(app)
 
         # layout
         layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        layout.addWidget(self.input)
-        layout.addWidget(self.get_price_button)
-        layout.addWidget(self.get_volume_button)
-        layout.addWidget(self.get_news_button)
-        layout.addWidget(line)
-        layout.addWidget(self.buy_sell_label)
-        layout.addWidget(self.buy_sell_input)
-        layout.addWidget(self.buy_stock_button)
-        layout.addWidget(self.sell_stock_button)
-
-        # Order Entry widget
-        for _ in range(4):
-            divider_line = QFrame()
-            divider_line.setFrameShape(QFrame.Shape.HLine)
-            divider_line.setFrameShadow(QFrame.Shadow.Sunken)
-            layout.addWidget(divider_line)
-
-        self.order_entry_widget = OrderEntryWidget(app)
         layout.addWidget(self.order_entry_widget)
+        layout.addWidget(self.stock_news_widget)
 
         # parent widget container for layout
         container = QWidget()
@@ -77,87 +40,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container) # sets window to display container
 
 
-    def get_price(self):
-        print("Price button clicked!")
-        symbol = self.input.text().upper()
-        contract:Contract = req_contract_from_symbol(self.app, symbol)
-        print(contract)
-        get_live_prices(self.app, contract)
-
-    def get_volume(self):
-        print("Volume button clicked!")
-        symbol = self.input.text().upper()
-        contract:Contract = req_contract_from_symbol(self.app, symbol)
-        print(contract)
-        get_live_volume(self.app, contract)
-
-    def get_news(self):
-        print("News button clicked!")
-        symbol = self.input.text().upper()
-        contract:Contract = req_contract_from_symbol(self.app, symbol)
-        print(contract)
-        get_news_headlines(self.app, contract)
-
-    def buy_stock(self):
-        print("Buy stock button clicked!")
-        symbol = self.buy_sell_input.text().upper()
-        contract:Contract = req_contract_from_symbol(self.app, symbol)
-        print(contract)
-
-        dialog = BuySellDialog("buy")
-        if dialog.exec():
-            quantity = dialog.get_quantity()
-            print(f"Quantity entered: {quantity}")
-            buy_stock(self.app, contract, quantity)
-
-        else:
-            print("Purchase cancelled")
-
-    def sell_stock(self):
-        print("Sell stock button clicked!")
-        symbol = self.buy_sell_input.text().upper()
-        contract:Contract = req_contract_from_symbol(self.app, symbol)
-        print(contract)
-
-        dialog = BuySellDialog("sell")
-        if dialog.exec():
-            quantity = dialog.get_quantity()
-            print(f"Quantity entered: {quantity}")
-            sell_stock(self.app, contract, quantity)
-
-        else:
-            print("Purchase cancelled")
-
-
     # stops script on window close
     def closeEvent(self, event):
         print("Disconnecting from TWS")
         self.app.disconnect()
         event.accept()
-
-class BuySellDialog(QDialog):
-    def __init__(self, order_action):
-        super().__init__()
-
-        self.setWindowTitle("Quantity")
-
-        if order_action == "buy":
-            self.quantity_label = QLabel("How many would you like to purchase?")
-        if order_action == "sell":
-            self.quantity_label = QLabel("How many would you like to sell?")
-        self.quantity_input = QLineEdit()
-
-        buttons = (QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        self.buttonBox = QDialogButtonBox(buttons)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.quantity_label)
-        layout.addWidget(self.quantity_input)
-        layout.addWidget(self.buttonBox)
-
-        self.setLayout(layout)
-
-    def get_quantity(self):
-        return self.quantity_input.text()

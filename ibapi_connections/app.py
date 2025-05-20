@@ -5,6 +5,8 @@ import time
 from ibapi.order import *
 import threading
 from PyQt6.QtCore import pyqtSignal, QObject
+import datetime
+from dataclasses import dataclass
 
 
 # EClient is used to send requests to TWS, EWrapper is used to receive responses from TWS
@@ -32,6 +34,13 @@ class StockApp(EWrapper, EClient, QObject):
         self.open_price = None
         self.close_price = None
 
+        # variables for news data
+        self.find_articles_event = threading.Event()
+        self.articles_found = []
+
+        self.find_article_text_event = threading.Event()
+        self.selected_article_text = ""
+
         # threading events for buying a stock
         self.find_matching_contract_event = threading.Event()
         self.matching_contract = None
@@ -40,9 +49,8 @@ class StockApp(EWrapper, EClient, QObject):
         self.trading_volume = None
 
         # variables for news data
-        self.find_articles_event = threading.Event()
-        self.headlines_found = []
-        self.articles_found = []
+
+
 
     # generates reqIds for internal use
     def getNextReqId(self):
@@ -169,7 +177,12 @@ class StockApp(EWrapper, EClient, QObject):
     # defines response for reqHistoricalNews
     def historicalNews(self, reqId, time, providerCode, articleId, headline):
         # print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
-        self.headlines_found.append(headline)
+        article_obj = NewsArticle(
+            date = time,
+            headline = headline,
+            article_id = articleId
+        )
+        self.articles_found.append(article_obj)
         self.find_articles_event.set()
 
     def historicalDataEnd(self, reqId, hasMore):
@@ -177,6 +190,8 @@ class StockApp(EWrapper, EClient, QObject):
 
     # defines response for reqNewsArticle (note: article text returns html as a single line)
     def newsArticle(self, reqId, articleType, articleText):
+        self.selected_article_text = articleText
+        self.find_article_text_event.set()
         print(f"News Article: reqId: {reqId}, articleType: {articleType}, article text: {articleText}")
 
 #--------------------------------Orders Endpoint--------------------------------------------------------------------
@@ -194,3 +209,10 @@ class StockApp(EWrapper, EClient, QObject):
         print(f"Exec details: reqId: {reqId}, contract: {contract}, execution: {execution}")
 
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
+
+# news article object
+@dataclass
+class NewsArticle:
+    date: str
+    headline: str
+    article_id: str
