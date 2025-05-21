@@ -22,3 +22,14 @@ def get_live_volume(app, contract):
     app.reqMarketDataType(3)
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 
+# gets historical bar data of contract
+def get_market_data_graph(app, contract):
+
+    app.reqMarketDataType(3)
+    app.reqHistoricalData(app.getNextReqId(), contract, "", "1 M", "1 day", "TRADES", 1, 1, True, [])
+
+    if app.find_market_data_bars_event.wait(timeout=5):
+        return app.market_data_bars
+    else:
+        print("Market Bar Data not received")
+        return None

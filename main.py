@@ -6,6 +6,7 @@ from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QApplication
 
 from ibapi_connections.app import StockApp
+from ibapi_connections.account_data import currently_held_positions
 from ibapi_connections.contract_data import req_contract_from_symbol
 from ibapi_connections.market_data import get_live_volume, get_live_prices
 from ibapi_connections.orders import buy_stock, deprecated_buy_stock, deprecated_sell_stock

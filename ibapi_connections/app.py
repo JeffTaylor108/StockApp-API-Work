@@ -48,8 +48,13 @@ class StockApp(EWrapper, EClient, QObject):
         # threading events for getting volume of stock
         self.trading_volume = None
 
-        # variables for news data
+        # variables for positions of account
+        self.find_portfolio_event = threading.Event()
+        self.portfolio = []
 
+        # variables for market data graphs
+        self.find_market_data_bars_event = threading.Event()
+        self.market_data_bars = []
 
 
     # generates reqIds for internal use
@@ -73,6 +78,21 @@ class StockApp(EWrapper, EClient, QObject):
 
     def accountSummaryEnd(self, reqId):
         print(f"All Account Summary data received for reqId: {reqId}")
+
+    # defines response for reqPositions
+    def position(self, account, contract, position, avgCost):
+        # print(f"Positions: Account: {account} Contract: {contract} Position: {position} Avg cost: {avgCost}")
+
+        portfolio_obj = Portfolio(
+            contract = contract,
+            position = position,
+            avg_cost = avgCost
+        )
+        self.portfolio.append(portfolio_obj)
+
+    def positionEnd(self):
+        self.find_portfolio_event.set()
+        print("Ended positions request")
 
     # -----------------------------------Contract Data Endpoint---------------------------------------------------------------
 
@@ -208,11 +228,28 @@ class StockApp(EWrapper, EClient, QObject):
     def execDetailsEnd(self, reqId, contract, execution):
         print(f"Exec details: reqId: {reqId}, contract: {contract}, execution: {execution}")
 
+#--------------------------------Historical Data Graphs Endpoint--------------------------------------------------------------------
+
+    # responds with historical bar data of contract
+    def historicalData(self, reqId, bar: BarData):
+        print(f"Historical bar data: Req Id: {reqId}, Bar Data: {bar}")
+        self.market_data_bars.append(bar)
+
+    def historicalDataEnd(self, reqId, start, end):
+        self.find_market_data_bars_event.set()
+        print("HistoricalDataEnd. ReqId:", reqId, "from", start, "to", end)
+
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
 
-# news article object
+# data objects
 @dataclass
 class NewsArticle:
     date: str
     headline: str
     article_id: str
+
+@dataclass
+class Portfolio:
+    contract: Contract
+    position: int
+    avg_cost: float
