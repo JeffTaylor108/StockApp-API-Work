@@ -34,6 +34,14 @@ class StockApp(EWrapper, EClient, QObject):
         self.open_price = None
         self.close_price = None
 
+        # mapping from req id to stock symbol
+        self.id_to_symbol = {}
+
+        # dictionary for stock data with stock symbol as key
+        # stores bid_price, ask_price, last_traded_price, high_price, low_price, open_price, close_price
+        self.stock_data = {}
+        self.find_stock_data_event = threading.Event()
+
         # variables for news data
         self.find_articles_event = threading.Event()
         self.articles_found = []
@@ -138,36 +146,54 @@ class StockApp(EWrapper, EClient, QObject):
     # tickList docs: https://ibkrcampus.com/campus/ibkr-api-page/twsapi-doc/#available-tick-types
     def tickPrice(self, reqId, tickType, price, attrib):
 
+        symbol = self.id_to_symbol.get(reqId)
+
+        if symbol not in self.stock_data:
+            self.stock_data[symbol] = {}
+
         if tickType == 66:
+            self.stock_data[symbol]["bid"] = price
             self.bid_price = price
             print(f"Bid price: {price}")
 
         elif tickType == 67:
+            self.stock_data[symbol]["ask"] = price
             self.ask_price = price
             print(f"Ask price: {price}")
 
         elif tickType == 68:
+            self.stock_data[symbol]["last"] = price
             self.last_traded_price = price
             print(f"Last traded price: {price}")
 
         elif tickType == 72:
+            self.stock_data[symbol]["high"] = price
             self.high_price = price
             print(f"High price: {price}")
 
         elif tickType == 73:
+            self.stock_data[symbol]["low"] = price
             self.low_price = price
             print(f"Low traded price: {price}")
 
         elif tickType == 75:
+            self.stock_data[symbol]["close"] = price
             self.close_price = price
             print(f"Closing price: {price}")
 
         elif tickType == 76:
+            self.stock_data[symbol]["open"] = price
             self.open_price = price
             print(f"Opening price: {price}")
 
         # emits signal to trigger an event
-        self.stock_prices_updated.emit()
+        if symbol in self.stock_data:
+            stock_info = self.stock_data[symbol]
+            if (stock_info.get('last') is not None or
+                    (stock_info.get('bid') is not None and stock_info.get('ask') is not None)):
+                self.find_stock_data_event.set()
+                self.stock_prices_updated.emit()
+
 
         # commented out for refactoring
         # print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
@@ -175,7 +201,12 @@ class StockApp(EWrapper, EClient, QObject):
     # same as tickPrice
     def tickSize(self, reqId, tickType, size):
 
+        symbol = self.id_to_symbol.get(reqId)
+        if symbol not in self.stock_data:
+            self.stock_data[symbol] = {}
+
         if tickType == 74:
+            self.stock_data[symbol]["volume"] = size
             self.trading_volume = size
             print(f"Trading volume for day: {size}")
 
