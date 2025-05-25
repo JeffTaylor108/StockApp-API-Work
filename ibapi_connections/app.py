@@ -164,9 +164,10 @@ class StockApp(EWrapper, EClient, QObject):
                 self.portfolio_dict.get(symbol).close = price
                 print(f"Close price for {symbol} changed to ", price)
 
-            event = self.id_to_event.get(reqId)
             if self.portfolio_dict.get(symbol).last != -1 and self.portfolio_dict.get(symbol).close != -1:
-                event.set()
+                event = self.id_to_event.get(reqId)
+                if event and not event.is_set():
+                    event.set()
                 self.portfolio_prices_updated.emit()
 
         else:
