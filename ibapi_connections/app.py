@@ -152,23 +152,22 @@ class StockApp(EWrapper, EClient, QObject):
     def tickPrice(self, reqId, tickType, price, attrib):
 
         if reqId in self.req_id_to_portfolio_symbol:
-            if tickType == 68:
 
-                # finds associated symbol in portfolio from req_id
-                symbol = self.req_id_to_portfolio_symbol.get(reqId)
+            # finds associated symbol in portfolio from req_id
+            symbol = self.req_id_to_portfolio_symbol.get(reqId)
+
+            if tickType == 68:
                 self.portfolio_dict.get(symbol).last = price
                 print(f"Last bid price for {symbol} changed to ", price)
 
             elif tickType == 75:
-
-                # finds associated symbol in portfolio from req_id
-                symbol = self.req_id_to_portfolio_symbol.get(reqId)
                 self.portfolio_dict.get(symbol).close = price
                 print(f"Close price for {symbol} changed to ", price)
 
             event = self.id_to_event.get(reqId)
-            event.set()
-            self.portfolio_prices_updated.emit()
+            if self.portfolio_dict.get(symbol).last != -1 and self.portfolio_dict.get(symbol).close != -1:
+                event.set()
+                self.portfolio_prices_updated.emit()
 
         else:
             if tickType == 66:

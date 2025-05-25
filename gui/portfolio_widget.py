@@ -48,8 +48,7 @@ class PortfolioWidget(QWidget):
             self.portfolio_table.setItem(row_position, 2, QTableWidgetItem(f"{position.last * position.position}"))
             self.portfolio_table.setItem(row_position, 3, QTableWidgetItem(f"{position.avg_cost:.2f}"))
             self.portfolio_table.setItem(row_position, 4, QTableWidgetItem(f"{position.last}"))
-            self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"{position.close}"))
-            self.portfolio_table.setItem(row_position, 6, QTableWidgetItem(f"{position.last - position.close}"))
+            self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"{(position.last - position.close):.2f}"))
 
 
     # updates position price and change values
@@ -64,8 +63,7 @@ class PortfolioWidget(QWidget):
             self.portfolio_table.setItem(row, 2, QTableWidgetItem(f"{position.last * position.position}"))
             self.portfolio_table.setItem(row, 3, QTableWidgetItem(f"{position.avg_cost}"))
             self.portfolio_table.setItem(row, 4, QTableWidgetItem(f"{position.last}"))
-            self.portfolio_table.setItem(row, 5, QTableWidgetItem(f"{position.close:}"))
-            self.portfolio_table.setItem(row, 6, QTableWidgetItem(f"{position.last - position.close}"))
+            self.portfolio_table.setItem(row, 5, QTableWidgetItem(f"{(position.last - position.close):.2f}"))
 
 
 
