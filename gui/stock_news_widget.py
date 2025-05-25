@@ -36,7 +36,7 @@ class StockNewsWidget(QWidget):
         search_bar_layout.addWidget(self.symbol_search)
         search_bar_layout.addWidget(search_button)
 
-        # portfolio news button
+        # portfolio_dict news button
         portfolio_news_button = QPushButton("View Portfolio News")
         portfolio_news_button.clicked.connect(self.get_portfolio_news)
 

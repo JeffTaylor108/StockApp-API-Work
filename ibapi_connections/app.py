@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ibapi.client import *
 from ibapi.wrapper import *
 from ibapi.contract import *
@@ -6,7 +8,7 @@ from ibapi.order import *
 import threading
 from PyQt6.QtCore import pyqtSignal, QObject
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 # EClient is used to send requests to TWS, EWrapper is used to receive responses from TWS
@@ -18,6 +20,7 @@ class StockApp(EWrapper, EClient, QObject):
     # creates a signal that triggers whenever method.emit() is called
     connected = pyqtSignal()
     stock_prices_updated = pyqtSignal()
+    portfolio_prices_updated = pyqtSignal()
 
     def __init__(self):
         EClient.__init__(self, self)
@@ -26,21 +29,20 @@ class StockApp(EWrapper, EClient, QObject):
         self.nextReqId = 1
 
         # variables for stock data
-        self.bid_price = None
-        self.ask_price = None
-        self.last_traded_price = None
-        self.high_price = None
-        self.low_price = None
-        self.open_price = None
-        self.close_price = None
+        self.market_data = MarketData(
+            req_id=None,
+            bid=None,
+            ask=None,
+            last=None,
+            open=None,
+            close=None,
+            high=None,
+            low=None,
+            volume=None
+        )
 
-        # mapping from req id to stock symbol
-        self.id_to_symbol = {}
-
-        # dictionary for stock data with stock symbol as key
-        # stores bid_price, ask_price, last_traded_price, high_price, low_price, open_price, close_price
-        self.stock_data = {}
-        self.find_stock_data_event = threading.Event()
+        # mapping from req id to event
+        self.id_to_event ={}
 
         # variables for news data
         self.find_articles_event = threading.Event()
@@ -53,12 +55,11 @@ class StockApp(EWrapper, EClient, QObject):
         self.find_matching_contract_event = threading.Event()
         self.matching_contract = None
 
-        # threading events for getting volume of stock
-        self.trading_volume = None
-
         # variables for positions of account
         self.find_portfolio_event = threading.Event()
-        self.portfolio = []
+        self.req_id_to_portfolio_symbol = {}
+        self.portfolio_dict = {} # dictionary that matches stock symbol to position
+        self.portfolio_list =[]
 
         # variables for market data graphs
         self.find_market_data_bars_event = threading.Event()
@@ -93,10 +94,14 @@ class StockApp(EWrapper, EClient, QObject):
 
         portfolio_obj = Portfolio(
             contract = contract,
-            position = position,
-            avg_cost = avgCost
+            position = float(position),
+            avg_cost = avgCost,
+            last = -1,
+            close = -1
         )
-        self.portfolio.append(portfolio_obj)
+
+        self.portfolio_dict[contract.symbol] = portfolio_obj
+        self.portfolio_list.append(portfolio_obj)
 
     def positionEnd(self):
         self.find_portfolio_event.set()
@@ -146,72 +151,74 @@ class StockApp(EWrapper, EClient, QObject):
     # tickList docs: https://ibkrcampus.com/campus/ibkr-api-page/twsapi-doc/#available-tick-types
     def tickPrice(self, reqId, tickType, price, attrib):
 
-        symbol = self.id_to_symbol.get(reqId)
+        if reqId in self.req_id_to_portfolio_symbol:
+            if tickType == 68:
 
-        if symbol not in self.stock_data:
-            self.stock_data[symbol] = {}
+                # finds associated symbol in portfolio from req_id
+                symbol = self.req_id_to_portfolio_symbol.get(reqId)
+                self.portfolio_dict.get(symbol).last = price
+                print(f"Last bid price for {symbol} changed to ", price)
 
-        if tickType == 66:
-            self.stock_data[symbol]["bid"] = price
-            self.bid_price = price
-            print(f"Bid price: {price}")
+            elif tickType == 75:
 
-        elif tickType == 67:
-            self.stock_data[symbol]["ask"] = price
-            self.ask_price = price
-            print(f"Ask price: {price}")
+                # finds associated symbol in portfolio from req_id
+                symbol = self.req_id_to_portfolio_symbol.get(reqId)
+                self.portfolio_dict.get(symbol).close = price
+                print(f"Close price for {symbol} changed to ", price)
 
-        elif tickType == 68:
-            self.stock_data[symbol]["last"] = price
-            self.last_traded_price = price
-            print(f"Last traded price: {price}")
+            event = self.id_to_event.get(reqId)
+            event.set()
+            self.portfolio_prices_updated.emit()
 
-        elif tickType == 72:
-            self.stock_data[symbol]["high"] = price
-            self.high_price = price
-            print(f"High price: {price}")
+        else:
+            if tickType == 66:
+                self.market_data.bid = price
+                print(f"Bid price: {price}")
 
-        elif tickType == 73:
-            self.stock_data[symbol]["low"] = price
-            self.low_price = price
-            print(f"Low traded price: {price}")
+            elif tickType == 67:
+                self.market_data.ask = price
+                print(f"Ask price: {price}")
 
-        elif tickType == 75:
-            self.stock_data[symbol]["close"] = price
-            self.close_price = price
-            print(f"Closing price: {price}")
+            elif tickType == 68:
+                self.market_data.last = price
+                print(f"Last traded price: {price}")
 
-        elif tickType == 76:
-            self.stock_data[symbol]["open"] = price
-            self.open_price = price
-            print(f"Opening price: {price}")
+            elif tickType == 72:
+                self.market_data.high = price
+                print(f"High price: {price}")
 
-        # emits signal to trigger an event
-        if symbol in self.stock_data:
-            stock_info = self.stock_data[symbol]
-            if (stock_info.get('last') is not None or
-                    (stock_info.get('bid') is not None and stock_info.get('ask') is not None)):
-                self.find_stock_data_event.set()
-                self.stock_prices_updated.emit()
+            elif tickType == 73:
+                self.market_data.low = price
+                print(f"Low traded price: {price}")
 
+            elif tickType == 75:
+                self.market_data.close = price
+                print(f"Closing price: {price}")
 
-        # commented out for refactoring
-        # print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
+            elif tickType == 76:
+                self.market_data.open = price
+                print(f"Opening price: {price}")
+
+            # emits signal to trigger an event
+            self.check_and_emit_complete_data()
+
+            # commented out for refactoring
+            # print(f"Tick Price: reqId: {reqId}, tickType: {tickType}, price: {price}, attrib: {attrib}")
 
     # same as tickPrice
     def tickSize(self, reqId, tickType, size):
 
-        symbol = self.id_to_symbol.get(reqId)
-        if symbol not in self.stock_data:
-            self.stock_data[symbol] = {}
-
         if tickType == 74:
-            self.stock_data[symbol]["volume"] = size
-            self.trading_volume = size
+            self.market_data.volume = size
             print(f"Trading volume for day: {size}")
+
+        self.check_and_emit_complete_data()
 
         # commented out for refactoring
         # print(f"Tick Size: reqId: {reqId}, tickType: {tickType}, size: {size}")
+
+    def cancelMktData(self, reqId):
+        print(f"Market data for request {reqId} cancelled successfully")
 
     #--------------------------------News Endpoint--------------------------------------------------------------------
 
@@ -272,6 +279,22 @@ class StockApp(EWrapper, EClient, QObject):
 
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
 
+    # helper method for tickPrice and tickSize event threading
+    def check_and_emit_complete_data(self):
+        data_dict = asdict(self.market_data)
+
+        # Define what counts as "unfilled" – here we assume None or 0 is unfilled
+        all_filled = all(
+            value is not None for key, value in data_dict.items() if key != 'req_id'
+        )
+
+        if all_filled:
+            event = self.id_to_event.get(self.market_data.req_id)
+            if event and not event.is_set():
+                event.set()
+            self.stock_prices_updated.emit()
+
+
 # data objects
 @dataclass
 class NewsArticle:
@@ -282,5 +305,20 @@ class NewsArticle:
 @dataclass
 class Portfolio:
     contract: Contract
-    position: int
+    position: float
     avg_cost: float
+    last: Optional[float]
+    close: Optional[float]
+
+@dataclass
+class MarketData:
+    req_id: int
+    bid: Optional[float]
+    ask: Optional[float]
+    last: Optional[float]
+    high: Optional[float]
+    low: Optional[float]
+    open: Optional[float]
+    close: Optional[float]
+    volume: Optional[float]
+

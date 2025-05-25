@@ -1,3 +1,4 @@
+import threading
 
 
 # testing interactions with market data
@@ -8,32 +9,19 @@ def market_data_testing(app, contract):
     app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 
 # gets live bid, ask, and last traded prices of contract
-def get_live_prices(app, contract):
+def get_live_prices_and_volume(app, contract):
     app.reqMarketDataType(3)
 
     req_id = app.getNextReqId()
-    app.id_to_symbol[req_id] = contract.symbol
+    app.market_data.req_id = req_id
 
-    app.find_stock_data_event.clear()
-
-    if contract.symbol not in app.stock_data:
-        app.stock_data[contract.symbol] = {
-            "req_id": req_id,
-            "bid": None,
-            "ask": None,
-            "last": None,
-            "high": None,
-            "low": None,
-            "open": None,
-            "close": None,
-            "volume": None
-        }
-    else:
-        app.stock_data[contract.symbol]['req_id'] = req_id
+    event = threading.Event()
+    app.id_to_event[req_id] = event
 
     app.reqMktData(req_id, contract, "", False, False, [])
-    if app.find_stock_data_event.wait(timeout=5):
-        return app.stock_data[contract.symbol]
+    if event.wait(timeout=5):
+        print(app.market_data)
+        return None
     else:
         print("timed out finding stock data")
         return None
@@ -42,11 +30,6 @@ def get_live_prices(app, contract):
 def stop_mkt_data_stream(app, reqId):
     app.cancelMktData(reqId)
     print("Market data stream closed.")
-
-# gets live volume of contract
-def get_live_volume(app, contract):
-    app.reqMarketDataType(3)
-    app.reqMktData(app.getNextReqId(), contract, "", False, False, [])
 
 # gets historical bar data of contract
 def get_market_data_graph(app, contract, interval):
@@ -62,3 +45,20 @@ def get_market_data_graph(app, contract, interval):
     else:
         print("Market Bar Data not received")
         return None
+
+# opens market data streams for positions in portfolio_dict
+def get_portfolio_price_stream(app, contract):
+    app.reqMarketDataType(3)
+
+    req_id = app.getNextReqId()
+    app.req_id_to_portfolio_symbol[req_id] = contract.symbol
+
+    event = threading.Event()
+    app.id_to_event[req_id] = event
+
+    app.reqMktData(req_id, contract, "", False, False, [])
+
+    if event.wait(timeout=5):
+        print(f'Portfolio price stream for {contract.symbol} initialized')
+    else:
+        print(f'Price stream for {contract.symbol} timed out')

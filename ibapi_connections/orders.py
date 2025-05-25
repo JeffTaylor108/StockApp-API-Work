@@ -4,7 +4,7 @@ from PyQt6.QtCore import QTimer
 from ibapi.order import *
 
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_prices, stop_mkt_data_stream
+from ibapi_connections.market_data import get_live_prices_and_volume, stop_mkt_data_stream
 
 
 # testing interactions with buying/selling stocks
@@ -86,7 +86,7 @@ def deprecated_buy_stock(app):
     contract = req_contract_from_symbol(app)
     print(contract)
 
-    get_live_prices(app, contract)
+    get_live_prices_and_volume(app, contract)
     time.sleep(1)
     stop_mkt_data_stream(app, app.nextReqId - 1)
 
@@ -114,7 +114,7 @@ def deprecated_sell_stock(app):
     contract = req_contract_from_symbol(app)
     print(contract)
 
-    get_live_prices(app, contract)
+    get_live_prices_and_volume(app, contract)
     time.sleep(1)
     stop_mkt_data_stream(app, app.nextReqId - 1)
 

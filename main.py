@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QApplication
 from ibapi_connections.app import StockApp
 from ibapi_connections.account_data import currently_held_positions
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_volume, get_live_prices
+from ibapi_connections.market_data import get_live_prices_and_volume
 from ibapi_connections.orders import buy_stock, deprecated_buy_stock, deprecated_sell_stock
 from gui.main_window import MainWindow
 
@@ -47,12 +47,11 @@ def testing(app):
     if testing == "get_live_volume":
         contract = req_contract_from_symbol(app)
         print(contract)
-        get_live_volume(app, contract)
 
     if testing == "get_live_price":
         contract = req_contract_from_symbol(app)
         print(contract.symbol)
-        get_live_prices(app, contract)
+        get_live_prices_and_volume(app, contract)
 
     if testing == "buy_stock":
         deprecated_buy_stock(app)

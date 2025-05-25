@@ -15,17 +15,17 @@ def currently_held_positions(app):
     # requests positions for accessible account
     app.reqPositions()
 
-# gets stock symbols of positions in portfolio
+# gets stock symbols of positions in portfolio_dict
 def get_position_symbols(app):
 
-    app.portfolio = []
+    app.portfolio_list = []
     app.find_portfolio_event.clear()
     position_symbols = []
 
     app.reqPositions()
 
     if app.find_portfolio_event.wait(timeout=5):
-        for position in app.portfolio:
+        for position in app.portfolio_list:
             symbol = position.contract.symbol
             position_symbols.append(symbol)
     else:

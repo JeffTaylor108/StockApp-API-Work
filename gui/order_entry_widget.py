@@ -5,7 +5,7 @@ from PyQt6.QtCore import QSize, Qt, QTimer
 
 from gui import styling
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_prices
+from ibapi_connections.market_data import get_live_prices_and_volume
 
 from ibapi.contract import Contract
 
@@ -111,12 +111,12 @@ class OrderEntryWidget(QWidget):
         contract = req_contract_from_symbol(self.app, self.stock_symbol_dropdown.currentText())
         self.stock_selected = contract
 
-        get_live_prices(self.app, contract)
+        get_live_prices_and_volume(self.app, contract)
 
     def update_prices(self):
-        self.bid_price.setText(f"Bid Price: ${self.app.bid_price}")
-        self.ask_price.setText(f"Ask Price: ${self.app.ask_price}")
-        self.last_traded_price.setText(f"Last Traded Price: ${self.app.last_traded_price}")
+        self.bid_price.setText(f"Bid Price: ${self.app.market_data.bid}")
+        self.ask_price.setText(f"Ask Price: ${self.app.market_data.ask}")
+        self.last_traded_price.setText(f"Last Traded Price: ${self.app.market_data.last}")
 
     def check_order_type(self):
         if self.order_type_dropdown.currentText() == "LMT":
