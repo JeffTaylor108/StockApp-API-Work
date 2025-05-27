@@ -2,6 +2,7 @@ import time
 
 from PyQt6.QtCore import QTimer
 from ibapi.order import *
+from ibapi.order_cancel import OrderCancel
 
 from ibapi_connections.contract_data import req_contract_from_symbol
 from ibapi_connections.market_data import get_live_prices_and_volume, stop_mkt_data_stream
@@ -57,82 +58,29 @@ def submit_order(app, contract, action, order_type, quantity, limit_price=None):
     except Exception as e:
         print("Error placing order:", e)
 
+def get_active_orders(app):
 
-def buy_stock(app, contract, quantity):
+    app.find_active_orders_event.clear()
+    app.active_orders.clear()
 
-    order = Order()
-    order.orderId = app.nextOrderId
-    order.action = "BUY"
-    order.orderType = "MKT"
-    order.totalQuantity = quantity
-
-    app.placeOrder(app.nextOrderId, contract, order)
-
-def sell_stock(app, contract, quantity):
-
-    order = Order()
-    order.orderId = app.nextOrderId
-    order.action = "SELL"
-    order.orderType = "MKT"
-    order.totalQuantity = quantity
-
-    app.placeOrder(app.nextOrderId, contract, order)
-
-
-# old method for buying a stock, don't use, only keeping to potentially leverage some logic
-# flow: input stock symbol, see current price, confirm/deny purchase
-def deprecated_buy_stock(app):
-
-    contract = req_contract_from_symbol(app)
-    print(contract)
-
-    get_live_prices_and_volume(app, contract)
-    time.sleep(1)
-    stop_mkt_data_stream(app, app.nextReqId - 1)
-
-    response = input(f"The latest bid price was: {app.latest_bid_price}, would you like to buy? ").lower()
-    if response == "yes":
-
-        quantity:int = input("How many would you like to order? ")
-
-        while app.nextOrderId is None:
-            time.sleep(0.1)
-
-        order = Order()
-        order.orderId = app.nextOrderId
-        order.action = "BUY"
-        order.orderType = "MKT"
-        order.totalQuantity = quantity
-
-        app.placeOrder(app.nextOrderId, contract, order)
-
+    app.reqOpenOrders()
+    if app.find_active_orders_event.wait(timeout=5):
+        print("All active orders found")
     else:
-        print("Order cancelled")
+        print("Timeout while finding active orders")
 
-def deprecated_sell_stock(app):
+def get_completed_orders(app):
 
-    contract = req_contract_from_symbol(app)
-    print(contract)
+    app.find_completed_orders_event.clear()
+    app.completed_orders = []
 
-    get_live_prices_and_volume(app, contract)
-    time.sleep(1)
-    stop_mkt_data_stream(app, app.nextReqId - 1)
-
-    response = input(f"The latest bid price was: {app.latest_bid_price}, would you like to sell? ").lower()
-    if response == "yes":
-
-        quantity:int = input("How many would you like to sell? ")
-
-        while app.nextOrderId is None:
-            time.sleep(0.1)
-
-        order = Order()
-        order.orderId = app.nextOrderId
-        order.action = "SELL"
-        order.orderType = "MKT"
-        order.totalQuantity = quantity
-
-        app.placeOrder(app.nextOrderId, contract, order)
-
+    app.reqCompletedOrders(True)
+    if app.find_completed_orders_event.wait(timeout=5):
+        print("All completed orders found")
     else:
-        print("Order cancelled")
+        print('Timeout while finding completed orders')
+
+def cancel_order(app, order_id):
+    app.cancelOrder(order_id, OrderCancel())
+
+    print(f'Order {order_id} cancelled')

@@ -21,6 +21,8 @@ class StockApp(EWrapper, EClient, QObject):
     connected = pyqtSignal()
     stock_prices_updated = pyqtSignal()
     portfolio_prices_updated = pyqtSignal()
+    active_orders_updated = pyqtSignal()
+    completed_orders_updated = pyqtSignal()
 
     def __init__(self):
         EClient.__init__(self, self)
@@ -64,6 +66,12 @@ class StockApp(EWrapper, EClient, QObject):
         # variables for market data graphs
         self.find_market_data_bars_event = threading.Event()
         self.market_data_bars = []
+
+        # variables for order activity
+        self.find_completed_orders_event = threading.Event()
+        self.find_active_orders_event = threading.Event()
+        self.completed_orders = []
+        self.active_orders = {}
 
 
     # generates reqIds for internal use
@@ -256,15 +264,59 @@ class StockApp(EWrapper, EClient, QObject):
 
     # responds with details on order whenever an order is placed
     def openOrder(self, orderId, contract, order, orderState):
+
+        self.active_orders[orderId] = ActiveOrders (
+            order_id = orderId,
+            symbol = contract.symbol,
+            status = orderState.status,
+            action = order.action,
+            type = order.orderType,
+            quantity = order.totalQuantity,
+            fill_price = order.lmtPrice
+        )
+
+        self.active_orders_updated.emit()
+
         print(f"Open orders: orderId: {orderId}, contract: {contract}, order: {order}, order state: {orderState}")
+
+    def openOrderEnd(self):
+        self.find_active_orders_event.set()
+        print("All open orders received")
 
     # responds with details on order whenever the status of an order changes
     def orderStatus(self, orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
+
+        # handle movement of order logic here when status changes + changing status live
+
         print(f"Order Status: orderId: {orderId}, status: {status}, filled: {filled}, remaining: {remaining}, avgFillPrice: {avgFillPrice}, and more not printed")
+
+    # response with details on all completed orders
+    def completedOrder(self, contract: Contract, order: Order, orderState: OrderState):
+
+        self.completed_orders.append(CompletedOrders (
+            order_id = order.orderId,
+            symbol = contract.symbol,
+            status = orderState.status,
+            action = order.action,
+            type = order.orderType,
+            quantity = order.totalQuantity,
+            fill_price = order.lmtPrice
+        ))
+
+        print(f"Completed Orders: contract: {contract}, order: {order}, order state: {orderState}")
+
+    def completedOrdersEnd(self):
+        self.find_completed_orders_event.set()
+        print("All completed orders received")
 
     # responds with details on order when executed
     def execDetailsEnd(self, reqId, contract, execution):
         print(f"Exec details: reqId: {reqId}, contract: {contract}, execution: {execution}")
+
+    # response for when an order is cancelled
+    def cancelOrder(self, orderId: OrderId, orderCancel: OrderCancel):
+        self.active_orders_updated.emit()
+
 
 #--------------------------------Historical Data Graphs Endpoint--------------------------------------------------------------------
 
@@ -322,3 +374,22 @@ class MarketData:
     close: Optional[float]
     volume: Optional[float]
 
+@dataclass
+class ActiveOrders:
+    order_id: int
+    status: str
+    symbol: str
+    action: str
+    type: str
+    quantity: int
+    fill_price: float
+
+@dataclass
+class CompletedOrders:
+    order_id: int
+    status: str
+    symbol: str
+    action: str
+    type: str
+    quantity: int
+    fill_price: float

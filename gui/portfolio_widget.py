@@ -61,7 +61,7 @@ class PortfolioWidget(QWidget):
 
             self.portfolio_table.setItem(row, 1, QTableWidgetItem(f"{position.position}"))
             self.portfolio_table.setItem(row, 2, QTableWidgetItem(f"{position.last * position.position}"))
-            self.portfolio_table.setItem(row, 3, QTableWidgetItem(f"{position.avg_cost}"))
+            self.portfolio_table.setItem(row, 3, QTableWidgetItem(f"{position.avg_cost:.2f}"))
             self.portfolio_table.setItem(row, 4, QTableWidgetItem(f"{position.last}"))
             self.portfolio_table.setItem(row, 5, QTableWidgetItem(f"{(position.last - position.close):.2f}"))
 
