@@ -24,6 +24,7 @@ class StockDataWidget(QWidget):
         self.stock_symbol_dropdown.setEditable(True)
         self.stock_symbol_dropdown.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
         self.stock_symbol_dropdown.activated.connect(self.get_stock_selected)
+        self.app.stock_symbol_changed.connect(self.handle_symbol_change_signal)
 
         # data display
         self.price = QLabel("")
@@ -55,6 +56,7 @@ class StockDataWidget(QWidget):
     def get_stock_selected(self):
         symbol = self.stock_symbol_dropdown.currentText()
         self.stock_symbol_selected = symbol
+        self.app.check_current_symbol(symbol)  # handles universal symbol change
 
         if self.previous_stock_req_id is not None:
             stop_mkt_data_stream(self.app, self.previous_stock_req_id)
@@ -78,3 +80,6 @@ class StockDataWidget(QWidget):
         self.volume.setText(f"Today's volume: {stock_data.volume}")
         self.bid_and_ask.setText(f"Bid/Ask: {stock_data.bid} x {stock_data.ask}")
         self.high_and_low.setText(f"Hi/Lo: {stock_data.high} x {stock_data.low}")
+
+    def handle_symbol_change_signal(self):
+        self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)

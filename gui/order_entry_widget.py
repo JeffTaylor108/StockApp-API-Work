@@ -29,6 +29,7 @@ class OrderEntryWidget(QWidget):
         self.stock_symbol_dropdown.setEditable(True)
         self.stock_symbol_dropdown.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
         self.stock_symbol_dropdown.activated.connect(self.get_stock_selected)
+        self.app.stock_symbol_changed.connect(self.handle_symbol_change_signal)
 
         # price display
         price_display_label = QLabel("Live Data (15 min delay):")
@@ -106,6 +107,9 @@ class OrderEntryWidget(QWidget):
 
 
     def get_stock_selected(self):
+
+        # assigns stock selected to current stock
+        self.app.check_current_symbol(self.stock_symbol_dropdown.currentText())
         print("Stock symbol selected: ", self.stock_symbol_dropdown.currentText())
 
         contract = req_contract_from_symbol(self.app, self.stock_symbol_dropdown.currentText())
@@ -182,3 +186,6 @@ class OrderEntryWidget(QWidget):
             submit_order(self.app, contract, action, order_type, quantity)
 
         print("Order successfully submitted!")
+
+    def handle_symbol_change_signal(self):
+        self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)

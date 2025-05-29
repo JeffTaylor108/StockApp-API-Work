@@ -82,5 +82,3 @@ def get_completed_orders(app):
 
 def cancel_order(app, order_id):
     app.cancelOrder(order_id, OrderCancel())
-
-    print(f'Order {order_id} cancelled')

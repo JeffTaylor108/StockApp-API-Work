@@ -24,7 +24,8 @@ class StockGraphWidget(QWidget):
         self.stock_dropdown.addItems(['AAPL', 'TSLA', 'AMZN', 'NVDA', 'GOOGL'])
         self.stock_dropdown.setEditable(True)
         self.stock_dropdown.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
-        self.stock_dropdown.activated.connect(self.create_candlestick_graph)
+        self.stock_dropdown.currentTextChanged.connect(self.create_candlestick_graph)
+        self.app.stock_symbol_changed.connect(self.handle_symbol_change_signal)
 
         # candlestick interval dropdown
         self.interval_dropdown = QComboBox()
@@ -63,6 +64,7 @@ class StockGraphWidget(QWidget):
     # generated mostly by ChatGPT
     def create_candlestick_graph(self):
         symbol = self.stock_dropdown.currentText()
+        self.app.check_current_symbol(symbol) # handles universal symbol change
         contract: Contract = req_contract_from_symbol(self.app, symbol)
         interval = self.interval_dropdown.currentText()
         data = get_market_data_graph(self.app, contract, interval)
@@ -114,3 +116,6 @@ class StockGraphWidget(QWidget):
         string_axis.setTicks([ticks])
         self.market_data_graph.getAxis('bottom').setTicks([ticks])
         self.market_data_graph.enableAutoRange()
+
+    def handle_symbol_change_signal(self):
+        self.stock_dropdown.setCurrentText(self.app.current_symbol)

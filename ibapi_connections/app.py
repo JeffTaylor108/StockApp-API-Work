@@ -23,12 +23,16 @@ class StockApp(EWrapper, EClient, QObject):
     portfolio_prices_updated = pyqtSignal()
     active_orders_updated = pyqtSignal()
     completed_orders_updated = pyqtSignal()
+    stock_symbol_changed = pyqtSignal()
 
     def __init__(self):
         EClient.__init__(self, self)
         QObject.__init__(self)
         self.nextOrderId = None
         self.nextReqId = 1
+
+        # currently selected stock
+        self.current_symbol = 'AAPL'
 
         # variables for stock data
         self.market_data = MarketData(
@@ -286,7 +290,14 @@ class StockApp(EWrapper, EClient, QObject):
     # responds with details on order whenever the status of an order changes
     def orderStatus(self, orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
 
-        # handle movement of order logic here when status changes + changing status live
+        # when an order is cancelled, moves it from active dictionary to completed list
+        print("Status: ", {status})
+        if status == "Cancelled":
+            order = self.active_orders.get(orderId)
+            self.active_orders.pop(orderId)
+            self.completed_orders.append(order)
+            self.active_orders_updated.emit()
+            print(f"Order {orderId} cancelled")
 
         print(f"Order Status: orderId: {orderId}, status: {status}, filled: {filled}, remaining: {remaining}, avgFillPrice: {avgFillPrice}, and more not printed")
 
@@ -312,10 +323,6 @@ class StockApp(EWrapper, EClient, QObject):
     # responds with details on order when executed
     def execDetailsEnd(self, reqId, contract, execution):
         print(f"Exec details: reqId: {reqId}, contract: {contract}, execution: {execution}")
-
-    # response for when an order is cancelled
-    def cancelOrder(self, orderId: OrderId, orderCancel: OrderCancel):
-        self.active_orders_updated.emit()
 
 
 #--------------------------------Historical Data Graphs Endpoint--------------------------------------------------------------------
@@ -345,6 +352,12 @@ class StockApp(EWrapper, EClient, QObject):
             if event and not event.is_set():
                 event.set()
             self.stock_prices_updated.emit()
+
+    # helper method for handling universal symbol changes
+    def check_current_symbol(self, new_symbol):
+        if self.current_symbol != new_symbol:
+            self.current_symbol = new_symbol
+            self.stock_symbol_changed.emit()
 
 
 # data objects
