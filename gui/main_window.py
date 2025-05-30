@@ -24,6 +24,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("IB TWS API Trading GUI")
 
         # widgets to be added to layout
+
         # Order Entry widget
         self.order_entry_widget = OrderEntryWidget(app)
 
