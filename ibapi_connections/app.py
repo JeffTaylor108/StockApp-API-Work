@@ -247,6 +247,7 @@ class StockApp(EWrapper, EClient, QObject):
     # defines response for reqHistoricalNews
     def historicalNews(self, reqId, time, providerCode, articleId, headline):
         # print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
+
         article_obj = NewsArticle(
             date = time,
             headline = headline,

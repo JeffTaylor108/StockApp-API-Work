@@ -3,7 +3,7 @@ import json
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, QTextEdit
 
-from schwab_connections.market_data import get_quotes
+from schwab_connections.schwab_market_data import get_quotes
 from schwab_connections.schwab_auth import get_auth_url, authorize
 
 

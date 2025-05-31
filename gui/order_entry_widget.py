@@ -1,6 +1,6 @@
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout, QFrame, \
-    QDialog, QDialogButtonBox, QComboBox, QHBoxLayout, QRadioButton, QButtonGroup
+    QDialog, QDialogButtonBox, QComboBox, QHBoxLayout, QRadioButton, QButtonGroup, QStyle
 from PyQt6.QtCore import QSize, Qt, QTimer
 
 from gui import styling
@@ -9,7 +9,7 @@ from ibapi_connections.market_data import get_live_prices_and_volume
 
 from ibapi.contract import Contract
 
-from ibapi_connections.orders import submit_order
+from ibapi_connections.orders import submit_order, submit_bracket_order
 
 
 class OrderEntryWidget(QWidget):
@@ -19,6 +19,9 @@ class OrderEntryWidget(QWidget):
 
         # stored as Contract object
         self.stock_selected: Contract = None
+
+        # checks if bracket order is attached
+        self.is_bracket_order = False
 
         # widgets added to layout
         widget_label = QLabel("Buy and Sell Stocks")
@@ -49,6 +52,7 @@ class OrderEntryWidget(QWidget):
         self.limit_price = QLineEdit()
         self.limit_price.textChanged.connect(self.handle_limit_price_change)
 
+        # limit price container
         limit_price_layout = QVBoxLayout()
         limit_price_layout.addWidget(limit_price_label)
         limit_price_layout.addWidget(self.limit_price)
@@ -74,6 +78,39 @@ class OrderEntryWidget(QWidget):
         self.estimated_cost = QLabel("")
         self.estimated_cost.hide()
 
+        # bracket order button
+        bracket_order_label = QLabel("Attach a bracket to order?")
+        self.bracket_order_button = QPushButton()
+        self.bracket_order_button.clicked.connect(self.show_bracket_inputs)
+
+        # horizontal layout for bracket label/button
+        bracket_label_button_layout = QHBoxLayout()
+        bracket_label_button_layout.addWidget(bracket_order_label)
+        bracket_label_button_layout.addWidget(self.bracket_order_button)
+
+        # bracket order inputs
+        profit_taker_label = QLabel("Profit Taker:")
+        self.profit_taker_input = QLineEdit()
+        stop_loss_label = QLabel("Stop Loss:")
+        self.stop_loss_input = QLineEdit()
+        self.attach_bracket_button = QPushButton("Attach Bracket")
+        self.attach_bracket_button.clicked.connect(self.attach_bracket)
+        self.remove_bracket_button = QPushButton("Remove Bracket")
+        self.remove_bracket_button.clicked.connect(self.remove_bracket)
+
+        # bracket order input container
+        bracket_order_layout = QVBoxLayout()
+        bracket_order_layout.addWidget(profit_taker_label)
+        bracket_order_layout.addWidget(self.profit_taker_input)
+        bracket_order_layout.addWidget(stop_loss_label)
+        bracket_order_layout.addWidget(self.stop_loss_input)
+        bracket_order_layout.addWidget(self.attach_bracket_button)
+        bracket_order_layout.addWidget(self.remove_bracket_button)
+
+        self.bracket_order_container = QWidget()
+        self.bracket_order_container.setLayout(bracket_order_layout)
+        self.bracket_order_container.hide()
+
         # submit order button
         self.submit_button = QPushButton("Submit Order")
         self.submit_button.clicked.connect(self.submit_order)
@@ -93,6 +130,8 @@ class OrderEntryWidget(QWidget):
         layout.addWidget(self.quantity)
         layout.addWidget(self.buy_button)
         layout.addWidget(self.sell_button)
+        layout.addLayout(bracket_label_button_layout)
+        layout.addWidget(self.bracket_order_container)
         layout.addWidget(self.submit_button)
         layout.addWidget(self.estimated_cost)
 
@@ -104,6 +143,12 @@ class OrderEntryWidget(QWidget):
         # fonts/styling
         widget_label.setFont(styling.heading_font)
         price_display_label.setFont(styling.heading_font)
+
+        self.forward_arrow_icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
+        self.down_arrow_icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown)
+        self.bracket_order_button.setIcon(self.forward_arrow_icon)
+        self.bracket_order_button.setStyleSheet(styling.transparent_button_style)
+        self.bracket_order_shown = False
 
 
     def get_stock_selected(self):
@@ -176,16 +221,54 @@ class OrderEntryWidget(QWidget):
         quantity: int = int(self.quantity.text())
         action = self.buy_sell_group.checkedButton().text()
 
+        # bracket order vars
+        take_profit = float(self.profit_taker_input.text())
+        stop_loss = float(self.stop_loss_input.text())
+
         print(f"Contract: {contract},\n Order Type: {order_type}, Quantity: {quantity}, Action: {action}")
 
-        if order_type == "LMT":
+        if order_type == "LMT": # checks if limit order
             limit_price = float(self.limit_price.text())
-            submit_order(self.app, contract, action, order_type, quantity, limit_price)
+
+            if self.is_bracket_order: # checks if bracket order
+                submit_bracket_order(self.app, contract, action, order_type, quantity, take_profit, stop_loss, limit_price)
+            else:
+                submit_order(self.app, contract, action, order_type, quantity, limit_price)
 
         else:
-            submit_order(self.app, contract, action, order_type, quantity)
+
+            if self.is_bracket_order: # checks if bracket order
+                submit_bracket_order(self.app, contract, action, order_type, quantity, take_profit, stop_loss)
+            else:
+                submit_order(self.app, contract, action, order_type, quantity)
 
         print("Order successfully submitted!")
 
     def handle_symbol_change_signal(self):
         self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)
+
+    def show_bracket_inputs(self):
+
+        # checks if bracket order inputs are shown or not
+        if not self.bracket_order_shown:
+            self.bracket_order_container.show()
+            self.bracket_order_button.setIcon(self.down_arrow_icon)
+            self.bracket_order_shown = True
+
+        elif self.bracket_order_shown:
+            self.bracket_order_container.hide()
+            self.bracket_order_button.setIcon(self.forward_arrow_icon)
+            self.bracket_order_shown = False
+
+    def attach_bracket(self):
+
+        self.is_bracket_order = True
+        print('Bracket attached!')
+
+    def remove_bracket(self):
+
+        self.is_bracket_order = False
+        self.profit_taker_input.clear()
+        self.stop_loss_input.clear()
+
+        print('Bracket removed!')

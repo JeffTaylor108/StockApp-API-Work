@@ -80,5 +80,55 @@ def get_completed_orders(app):
     else:
         print('Timeout while finding completed orders')
 
+def submit_bracket_order(app, contract, action, order_type, quantity, take_profit, stop_loss, limit_price=None ):
+
+    # sets up parent order
+    parent_order = Order()
+    parent_order.orderId = app.nextOrderId
+    parent_order.action = action
+    parent_order.orderType = order_type
+    parent_order.totalQuantity = quantity
+    if limit_price is not None:
+        parent_order.lmtPrice = limit_price
+    parent_order.transmit = False
+
+    # sets up take profit order
+    take_profit_order = Order()
+    take_profit_order.orderId = parent_order.orderId + 1
+    if action == "BUY":
+        take_profit_order.action = "SELL"
+    else:
+        take_profit_order.action = "BUY"
+    take_profit_order.orderType = "LMT"
+    take_profit_order.totalQuantity = quantity
+    take_profit_order.lmtPrice = take_profit
+    take_profit_order.parentId = parent_order.orderId
+    take_profit_order.transmit = False
+
+    # sets up stop loss order
+    stop_loss_order = Order()
+    stop_loss_order.orderId = parent_order.orderId + 2
+    if action == "BUY":
+        stop_loss_order.action = "SELL"
+    else:
+        stop_loss_order.action = "BUY"
+    stop_loss_order.orderType = "STP"
+    stop_loss_order.totalQuantity = quantity
+    stop_loss_order.auxPrice = stop_loss
+    stop_loss_order.parentId = parent_order.orderId
+    stop_loss_order.transmit = True
+
+    # sends orders to TWS
+    try:
+        app.placeOrder(parent_order.orderId, contract, parent_order)
+        app.placeOrder(take_profit_order.orderId, contract, take_profit_order)
+        app.placeOrder(stop_loss_order.orderId, contract, stop_loss_order)
+        app.nextOrderId += 3
+        print("Bracket Order placed.")
+    except Exception as e:
+        print("Error placing order:", e)
+
+
+
 def cancel_order(app, order_id):
     app.cancelOrder(order_id, OrderCancel())

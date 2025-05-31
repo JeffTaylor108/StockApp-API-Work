@@ -1,6 +1,9 @@
 import datetime
 import re
 
+from ibapi.contract import Contract
+
+
 # testing interactions with news data
 def news_data_testing(app, contract):
 
