@@ -10,6 +10,7 @@ from ibapi_connections.account_data import currently_held_positions
 from ibapi_connections.contract_data import req_contract_from_symbol
 from ibapi_connections.market_data import get_live_prices_and_volume
 from gui.main_window import MainWindow
+from schwab_gui.schwab_auth_window import SchwabAuthWindow
 from schwab_gui.schwab_window import MainSchwabWindow
 
 
@@ -29,14 +30,14 @@ def main():
     print(f"App is connected: {app.isConnected()}")
 
     # initalizing GUI (uncomment after testing schwab gui)
-    gui = QApplication(sys.argv)
-    window = MainWindow(app)
-    window.show()
+    # gui = QApplication(sys.argv)
+    # window = MainWindow(app)
+    # window.show()
 
     # testing for Schwab GUI
-    # gui = QApplication(sys.argv)
-    # window = MainSchwabWindow()
-    # window.show()
+    gui = QApplication(sys.argv)
+    window = SchwabAuthWindow()
+    window.show()
 
     # no logic can go after this
     sys.exit(gui.exec())

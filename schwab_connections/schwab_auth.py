@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import requests
 import json
 
+
 def get_app_key():
     load_dotenv()
     app_key = os.getenv("APP_KEY")
@@ -47,6 +48,7 @@ def authorize(returned_link):
     token_dict = response.json()
     access_token = token_dict['access_token'] # token lasts 30 mins, must be refreshed by refresh token
     refresh_token = token_dict['refresh_token'] # token lasts 1 week, after that auth must occur again
+    token_dict['refresh_expire_time'] = time.time() + 604800 # current epoch time + 7 days in seconds
     expires_in = token_dict['expires_in']
     token_dict['expire_time'] = time.time() + expires_in # returns epoch time + 1800 seconds
 
@@ -56,6 +58,8 @@ def authorize(returned_link):
 
     print(token_dict)
     print("API access authorized")
+    return True
+
 
 # validates access token, refreshing it if needed
 def validate_access_token():
@@ -85,6 +89,7 @@ def validate_access_token():
 
         new_token_dict = new_access_token_response.json()
         new_token_dict['expire_time'] = time.time() + new_token_dict['expires_in']
+        new_token_dict['refresh_expire_time'] = token_data['refresh_expire_time']
 
         # replaces old tokens with valid tokens
         new_tokens_json = json.dumps(new_token_dict, indent=4)
@@ -95,6 +100,17 @@ def validate_access_token():
 
     else:
         print('Access token valid!')
+
+def get_refresh_expire_time():
+    try:
+        with open('schwab_connections/tokens.json', 'r') as file:
+            token_data = json.load(file)
+        print("refresh expire time: ", token_data.get('refresh_expire_time'))
+        return token_data['refresh_expire_time']
+
+    except Exception as e:
+        print(e)
+        return "No Token Found"
 
 if __name__ == "__main__":
     authorize()
