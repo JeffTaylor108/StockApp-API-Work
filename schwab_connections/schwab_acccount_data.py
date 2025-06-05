@@ -47,3 +47,18 @@ def get_streamer_ids():
     streamer_ids_res = response.json()["streamerInfo"][0]
     streamer_ids.schwab_client_customer_id = streamer_ids_res.get('schwabClientCustomerId')
     streamer_ids.schwab_client_correl_id = streamer_ids_res.get('schwabClientCorrelId')
+
+# returns account number
+def get_account_num():
+
+    validate_access_token()
+
+    with open('schwab_connections/tokens.json', 'r') as file:
+        token_data = json.load(file)
+
+    access_token = token_data['access_token']
+    response = requests.get(f"{base_url}/accounts/accountNumbers", headers={'Authorization': f'Bearer {access_token}'})
+
+    account_num = response.json()[0]['hashValue']
+    print(f"Account number: {account_num}")
+    return account_num

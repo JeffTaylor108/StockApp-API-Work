@@ -1,5 +1,6 @@
 import json
 import threading
+import time
 
 import requests
 import websocket
@@ -26,8 +27,7 @@ def get_quotes(symbol):
     return quote_response.json()
 
 # creates websocket object for live market data
-# must be called before any other websocket methods
-def open_market_data_websocket():
+def open_market_data_websocket(symbol):
 
     # validates/retrieves necessary tokens and ids
     validate_access_token()
@@ -48,11 +48,14 @@ def open_market_data_websocket():
     def on_message(ws, message):
         print(f"Message: {message}")
         data = json.loads(message)
-        command = data['response'][0]['command']
-        response_code = data['response'][0]['content']['code']
-        if response_code == 0 and command == "LOGIN":
-            print("valid login")
-            login_event.set()
+
+        # accounts for heartbeat messages that don't contain 'response'
+        if "response" in data:
+            command = data['response'][0]['command']
+            response_code = data['response'][0]['content']['code']
+            if response_code == 0 and command == "LOGIN":
+                print("valid login")
+                login_event.set()
 
     def on_error(ws, error):
         print(f"Error: {error}")
@@ -79,6 +82,25 @@ def open_market_data_websocket():
         ws.send(json.dumps(login_payload))
         print("sent login payload")
 
+        time.sleep(5)
+
+        # fields: 1: bid price, 2: ask price, 3: last price, 8: total volume, 10: high price, 11: low price, 12: close price,
+        #         17: open price, 18: net change, 19: 52 week high, 20: 52 week low, 42: net % change
+        mkt_data_payload = {
+            'requestid': '2',
+            'service': 'LEVELONE_EQUITIES',
+            'command': 'SUBS',
+            'SchwabClientCustomerId': schwab_client_customer_id,
+            'SchwabClientCorrelId': schwab_client_correl_id,
+            'parameters': {
+                'keys': symbol,
+                "fields": "1,2,3,8,10,11,12,17,18,19,20,42"
+            }
+        }
+
+        print("opening data stream for ", symbol)
+        ws.send(json.dumps(mkt_data_payload))
+
     # creates websocket object
     ws = websocket.WebSocketApp(
         web_socket_url,
@@ -89,31 +111,4 @@ def open_market_data_websocket():
     )
 
     # starts websocket thread (uncomment threading when running gui)
-    threading.Thread(target=ws.run_forever, daemon=True).start()
-    # ws.run_forever()
-
-    return ws, login_event
-
-# opens web socket for real-time data streaming
-def stream_stock_data(ws, symbol):
-
-    # retrieves necessary ids
-    schwab_client_customer_id = streamer_ids.schwab_client_customer_id
-    schwab_client_correl_id = streamer_ids.schwab_client_correl_id
-
-    # fields: 1: bid price, 2: ask price, 3: last price, 8: total volume, 10: high price, 11: low price, 12: close price,
-    #         17: open price, 18: net change, 19: 52 week high, 20: 52 week low, 42: net % change
-    mkt_data_payload = {
-        'requestid': '2',
-        'service': 'LEVELONE_EQUITIES',
-        'command': 'SUBS',
-        'SchwabClientCustomerId': schwab_client_customer_id,
-        'SchwabClientCorrelId': schwab_client_correl_id,
-        'parameters': {
-            'keys': symbol,
-            "fields": "1,2,3,8,10,11,12,17,18,19,20,42"
-        }
-    }
-
-    print("opening data stream for ", symbol)
-    ws.send(json.dumps(mkt_data_payload))
+    ws.run_forever()

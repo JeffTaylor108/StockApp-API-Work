@@ -5,6 +5,8 @@ import json
 from dotenv import load_dotenv
 
 import requests
+
+from schwab_connections.schwab_acccount_data import get_account_num
 from schwab_connections.schwab_auth import validate_access_token
 
 # must validate access token before any API calls
@@ -33,3 +35,35 @@ print(quote_response.json())
 price_history_candles_response = requests.get(f"{base_url}/marketdata/v1/pricehistory?symbol={symbol}&periodType=day&period=5&frequencyType=minute&frequency=15", headers={'Authorization': f'Bearer {access_token}'})
 print(price_history_candles_response.json())
 
+
+# preview order POST API call
+
+account_num = get_account_num()
+
+endpoint = f'/trader/v1/accounts/{account_num}/previewOrder'
+
+# order data to be sent with request
+order_data = {
+    "orderId": 0,
+    "orderStrategy": {
+        "accountNumber": account_num,
+        "orderStrategyType": "SINGLE",
+        "orderType": "MARKET",
+        "orderLegs": [
+            {
+                "assetType": "EQUITY",
+                "instruction": "BUY",
+                "quantity": 10,
+                "finalSymbol": "AAPL"
+            }
+        ]
+    }
+}
+
+order_response = requests.post(f"{base_url}{endpoint}",
+                              headers={'Authorization': f'Bearer {access_token}',
+                                       'Content-Type': 'application/json'},
+                              json=order_data
+                              )
+print(order_response.status_code)
+print(order_response.json())
