@@ -9,6 +9,26 @@ def account_summary_testing(app):
     # if multiple tags are provided, each value will be returned in a separate response
     app.reqAccountSummary(app.getNextReqId(), "All", "AccountType, AvailableFunds")
 
+# requests available funds of account
+def get_available_funds(app):
+    app.request_funds_event.clear()
+
+    app.reqAccountSummary(app.getNextReqId(), "All", "AvailableFunds")
+    if app.request_funds_event.wait(timeout=5):
+        print("Available funds: ", app.available_funds)
+    else:
+        print("Time out while finding available funds")
+
+# requests P&L data
+def get_pnl(app):
+    app.request_pnl_event.clear()
+
+    app.reqPnL(app.getNextReqId(), app.account, "")
+    if app.request_pnl_event.wait(timeout=5):
+        print ("PnL data received")
+    else:
+        print('Timed out requesting PnL data')
+
 # requests positions of an account
 def currently_held_positions(app):
 

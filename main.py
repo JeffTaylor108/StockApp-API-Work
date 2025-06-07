@@ -30,14 +30,14 @@ def main():
     print(f"App is connected: {app.isConnected()}")
 
     # initalizing GUI (uncomment after testing schwab gui)
-    # gui = QApplication(sys.argv)
-    # window = MainWindow(app)
-    # window.show()
+    gui = QApplication(sys.argv)
+    window = MainWindow(app)
+    window.show()
 
     # testing for Schwab GUI
-    gui = QApplication(sys.argv)
-    window = SchwabAuthWindow()
-    window.show()
+    # gui = QApplication(sys.argv)
+    # window = SchwabAuthWindow()
+    # window.show()
 
     # no logic can go after this
     sys.exit(gui.exec())

@@ -44,20 +44,140 @@ endpoint = f'/trader/v1/accounts/{account_num}/previewOrder'
 
 # order data to be sent with request
 order_data = {
-    "orderId": 0,
-    "orderStrategy": {
-        "accountNumber": account_num,
-        "orderStrategyType": "SINGLE",
-        "orderType": "MARKET",
-        "orderLegs": [
+  "orderId": 0,
+  "orderStrategy": {
+    "accountNumber": account_num,
+    "advancedOrderType": "NONE",
+    "closeTime": "2025-06-06T20:48:43.047Z",
+    "enteredTime": "2025-06-06T20:48:43.047Z",
+    "orderBalance": {
+      "orderValue": 0,
+      "projectedAvailableFund": 0,
+      "projectedBuyingPower": 0,
+      "projectedCommission": 0
+    },
+    "orderStrategyType": "SINGLE",
+    "orderVersion": 0,
+    "session": "NORMAL",
+    "status": "AWAITING_PARENT_ORDER",
+    "allOrNone": True,
+    "discretionary": True,
+    "duration": "DAY",
+    "filledQuantity": 0,
+    "orderType": "MARKET",
+    "orderValue": 0,
+    "price": 0,
+    "quantity": 0,
+    "remainingQuantity": 0,
+    "sellNonMarginableFirst": True,
+    "settlementInstruction": "REGULAR",
+    "strategy": "NONE",
+    "amountIndicator": "DOLLARS",
+    "orderLegs": [
+      {
+        "askPrice": 0,
+        "bidPrice": 0,
+        "lastPrice": 0,
+        "markPrice": 0,
+        "projectedCommission": 0,
+        "quantity": 0,
+        "finalSymbol": "string",
+        "legId": 0,
+        "assetType": "EQUITY",
+        "instruction": "BUY"
+      }
+    ]
+  },
+  "orderValidationResult": {
+    "alerts": [
+      {
+        "validationRuleName": "string",
+        "message": "string",
+        "activityMessage": "string",
+        "originalSeverity": "ACCEPT",
+        "overrideName": "string",
+        "overrideSeverity": "ACCEPT"
+      }
+    ],
+    "accepts": [
+      {
+        "validationRuleName": "string",
+        "message": "string",
+        "activityMessage": "string",
+        "originalSeverity": "ACCEPT",
+        "overrideName": "string",
+        "overrideSeverity": "ACCEPT"
+      }
+    ],
+    "rejects": [
+      {
+        "validationRuleName": "string",
+        "message": "string",
+        "activityMessage": "string",
+        "originalSeverity": "ACCEPT",
+        "overrideName": "string",
+        "overrideSeverity": "ACCEPT"
+      }
+    ],
+    "reviews": [
+      {
+        "validationRuleName": "string",
+        "message": "string",
+        "activityMessage": "string",
+        "originalSeverity": "ACCEPT",
+        "overrideName": "string",
+        "overrideSeverity": "ACCEPT"
+      }
+    ],
+    "warns": [
+      {
+        "validationRuleName": "string",
+        "message": "string",
+        "activityMessage": "string",
+        "originalSeverity": "ACCEPT",
+        "overrideName": "string",
+        "overrideSeverity": "ACCEPT"
+      }
+    ]
+  },
+  "commissionAndFee": {
+    "commission": {
+      "commissionLegs": [
+        {
+          "commissionValues": [
             {
-                "assetType": "EQUITY",
-                "instruction": "BUY",
-                "quantity": 10,
-                "finalSymbol": "AAPL"
+              "value": 0,
+              "type": "COMMISSION"
             }
-        ]
+          ]
+        }
+      ]
+    },
+    "fee": {
+      "feeLegs": [
+        {
+          "feeValues": [
+            {
+              "value": 0,
+              "type": "COMMISSION"
+            }
+          ]
+        }
+      ]
+    },
+    "trueCommission": {
+      "commissionLegs": [
+        {
+          "commissionValues": [
+            {
+              "value": 0,
+              "type": "COMMISSION"
+            }
+          ]
+        }
+      ]
     }
+  }
 }
 
 order_response = requests.post(f"{base_url}{endpoint}",

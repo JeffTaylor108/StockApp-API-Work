@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, QTextEdit, QTableWidget, \
     QGridLayout
 
-from schwab_connections.schwab_market_data import get_quotes, stream_stock_data
+from schwab_connections.schwab_market_data import get_quotes
 from schwab_connections.schwab_auth import get_auth_url, authorize
 
 
@@ -43,8 +43,8 @@ class MainSchwabWindow(QMainWindow):
             self.data_labels[field] = data_value
 
             # grid displays 2 fields per row
-            self.grid.addWidget(data_label_name, i // 2, (i % 2) * 2)
-            self.grid.addWidget(data_value, i // 2, (i % 2) * 2 + 1)
+            self.stock_data_grid.addWidget(data_label_name, i // 2, (i % 2) * 2)
+            self.stock_data_grid.addWidget(data_value, i // 2, (i % 2) * 2 + 1)
 
 
         # layout

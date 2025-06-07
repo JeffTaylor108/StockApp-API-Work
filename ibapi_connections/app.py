@@ -24,12 +24,19 @@ class StockApp(EWrapper, EClient, QObject):
     active_orders_updated = pyqtSignal()
     completed_orders_updated = pyqtSignal()
     stock_symbol_changed = pyqtSignal()
+    available_funds_updated = pyqtSignal()
+    pnl_updated = pyqtSignal()
 
     def __init__(self):
         EClient.__init__(self, self)
         QObject.__init__(self)
         self.nextOrderId = None
         self.nextReqId = 1
+
+        # currently available funds
+        self.account = ""
+        self.available_funds = 0
+        self.request_funds_event = threading.Event()
 
         # currently selected stock
         self.current_symbol = 'AAPL'
@@ -60,6 +67,12 @@ class StockApp(EWrapper, EClient, QObject):
         # threading events for buying a stock
         self.find_matching_contract_event = threading.Event()
         self.matching_contract = None
+
+        # variables for P&L of account
+        self.daily_pnl = -1
+        self.realized_pnl = -1
+        self.unrealized_pnl = -1
+        self.request_pnl_event = threading.Event()
 
         # variables for positions of account
         self.find_portfolio_event = threading.Event()
@@ -95,9 +108,13 @@ class StockApp(EWrapper, EClient, QObject):
     # defines response for reqAccountSummary
     def accountSummary(self, reqId, account, tag, value,
                        currency:str):
+        self.available_funds = value
+        self.account = account
         print(f"Account Summary: reqId: {reqId}, account: {account}, tag: {tag}, value: {value}, currency: {currency}")
 
     def accountSummaryEnd(self, reqId):
+        self.request_funds_event.set()
+        self.available_funds_updated.emit()
         print(f"All Account Summary data received for reqId: {reqId}")
 
     # defines response for reqPositions
@@ -118,6 +135,18 @@ class StockApp(EWrapper, EClient, QObject):
     def positionEnd(self):
         self.find_portfolio_event.set()
         print("Ended positions request")
+
+    # defines response for reqAccountUpdates (gets PnL values)
+    def pnl(self, reqId, dailyPnL, unrealizedPnL, realizedPnL):
+        print("P&L Data: ReqId:", reqId, "DailyPnL:", dailyPnL, "UnrealizedPnL:", unrealizedPnL, "RealizedPnL:",
+              realizedPnL)
+
+        self.daily_pnl = dailyPnL
+        self.realized_pnl = realizedPnL
+        self.unrealized_pnl = unrealizedPnL
+
+        self.request_pnl_event.set()
+        self.pnl_updated.emit()
 
     # -----------------------------------Contract Data Endpoint---------------------------------------------------------------
 
@@ -316,6 +345,9 @@ class StockApp(EWrapper, EClient, QObject):
         ))
 
         print(f"Completed Orders: contract: {contract}, order: {order}, order state: {orderState}")
+
+        # updates available funds after order
+        self.reqAccountSummary(self.getNextReqId(), "All", "AvailableFunds")
 
     def completedOrdersEnd(self):
         self.find_completed_orders_event.set()
