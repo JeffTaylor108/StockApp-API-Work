@@ -105,7 +105,6 @@ def get_refresh_expire_time():
     try:
         with open('schwab_connections/tokens.json', 'r') as file:
             token_data = json.load(file)
-        print("refresh expire time: ", token_data.get('refresh_expire_time'))
         return token_data['refresh_expire_time']
 
     except Exception as e:

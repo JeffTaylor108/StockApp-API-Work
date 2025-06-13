@@ -1,114 +1,131 @@
 import json
 import threading
-import time
 
 import requests
 import websocket
+from PyQt6.QtCore import pyqtSignal, QObject
 
-from schwab_connections.schwab_acccount_data import get_streamer_ids, StreamerIds, streamer_ids
+from schwab_connections.schwab_acccount_data import get_streamer_ids, streamer_ids
 from schwab_connections.schwab_auth import validate_access_token
 
-base_url = "https://api.schwabapi.com/marketdata/v1"
-web_socket_url = "wss://streamer-api.schwab.com/ws"
 
-def get_quotes(symbol):
+class SchwabMarketData(QObject):
 
-    # must validate access token before any API calls
-    validate_access_token()
-    with open('schwab_connections/tokens.json', 'r') as file:
-        token_data = json.load(file)
+    # pyqt6 signal for updating GUI
+    stock_data_updated = pyqtSignal(object)
 
-    access_token = token_data['access_token']
+    def __init__(self):
+        super().__init__()
 
-    quote_response = requests.get(f"{base_url}/{symbol}/quotes?fields=quote",
-                                  headers={'Authorization': f'Bearer {access_token}'})
+        self.base_url = "https://api.schwabapi.com/marketdata/v1"
+        self.web_socket_url = "wss://streamer-api.schwab.com/ws"
+        self.ws = None
 
-    print(quote_response.json())
-    return quote_response.json()
+    def get_quotes(self, symbol):
 
-# creates websocket object for live market data
-def open_market_data_websocket(symbol):
+        # must validate access token before any API calls
+        validate_access_token()
+        with open('schwab_connections/tokens.json', 'r') as file:
+            token_data = json.load(file)
 
-    # validates/retrieves necessary tokens and ids
-    validate_access_token()
-    with open('schwab_connections/tokens.json', 'r') as file:
-        token_data = json.load(file)
+        access_token = token_data['access_token']
 
-    access_token = token_data['access_token']
+        quote_response = requests.get(f"{self.base_url}/{symbol}/quotes?fields=quote",
+                                      headers={'Authorization': f'Bearer {access_token}'})
 
-    # only need to call get_streamer_ids() once per login
-    get_streamer_ids()
-    schwab_client_customer_id = streamer_ids.schwab_client_customer_id
-    schwab_client_correl_id = streamer_ids.schwab_client_correl_id
+        print(quote_response.json())
+        return quote_response.json()
 
-    # event watches for valid login
-    login_event = threading.Event()
+    # creates websocket object for live market data
+    def open_market_data_websocket(self, symbol):
 
-    # websocket definitions
-    def on_message(ws, message):
-        print(f"Message: {message}")
-        data = json.loads(message)
+        # validates/retrieves necessary tokens and ids
+        validate_access_token()
+        with open('schwab_connections/tokens.json', 'r') as file:
+            token_data = json.load(file)
 
-        # accounts for heartbeat messages that don't contain 'response'
-        if "response" in data:
-            command = data['response'][0]['command']
-            response_code = data['response'][0]['content']['code']
-            if response_code == 0 and command == "LOGIN":
-                print("valid login")
-                login_event.set()
+        access_token = token_data['access_token']
 
-    def on_error(ws, error):
-        print(f"Error: {error}")
+        # only need to call get_streamer_ids() once per login
+        get_streamer_ids()
+        schwab_client_customer_id = streamer_ids.schwab_client_customer_id
+        schwab_client_correl_id = streamer_ids.schwab_client_correl_id
 
-    def on_close(ws, close_status_code, close_msg):
-        print(f"Mkt Data web socket closed with code: {close_status_code}, message: {close_msg}")
+        # websocket definitions
+        def on_message(ws, message):
+            print(f"Message: {message}")
+            data = json.loads(message)
 
-    def on_open(ws):
-        print("Websocket Open")
+            # accounts for heartbeat messages that don't contain 'response'
+            if "response" in data:
+                command = data['response'][0]['command']
+                response_code = data['response'][0]['content']['code']
+                if response_code == 0 and command == "LOGIN":
+                    print("valid login")
 
-        login_payload = {
-            'requestid': '1',
-            'service': 'ADMIN',
-            'command': 'LOGIN',
-            'SchwabClientCustomerId': schwab_client_customer_id,
-            'SchwabClientCorrelId': schwab_client_correl_id,
-            'parameters': {
-                'Authorization': access_token,
-                "SchwabClientChannel": "IO",
-                "SchwabClientFunctionId": "Tradeticket"
+            elif "data" in data:
+                stock_data = data['data'][0]['content'][0]
+                self.stock_data_updated.emit(stock_data)
+
+        def on_error(ws, error):
+            print(f"Error: {error}")
+
+        def on_close(ws, close_status_code, close_msg):
+            print(f"{symbol} Mkt Data web socket closed with code: {close_status_code}, message: {close_msg}")
+
+        def on_open(ws):
+            print("Websocket Open")
+
+            login_payload = {
+                'requestid': '1',
+                'service': 'ADMIN',
+                'command': 'LOGIN',
+                'SchwabClientCustomerId': schwab_client_customer_id,
+                'SchwabClientCorrelId': schwab_client_correl_id,
+                'parameters': {
+                    'Authorization': access_token,
+                    "SchwabClientChannel": "IO",
+                    "SchwabClientFunctionId": "Tradeticket"
+                }
             }
-        }
 
-        ws.send(json.dumps(login_payload))
-        print("sent login payload")
-
-        time.sleep(5)
-
-        # fields: 1: bid price, 2: ask price, 3: last price, 8: total volume, 10: high price, 11: low price, 12: close price,
-        #         17: open price, 18: net change, 19: 52 week high, 20: 52 week low, 42: net % change
-        mkt_data_payload = {
-            'requestid': '2',
-            'service': 'LEVELONE_EQUITIES',
-            'command': 'SUBS',
-            'SchwabClientCustomerId': schwab_client_customer_id,
-            'SchwabClientCorrelId': schwab_client_correl_id,
-            'parameters': {
-                'keys': symbol,
-                "fields": "1,2,3,8,10,11,12,17,18,19,20,42"
+            # fields: 1: bid price, 2: ask price, 3: last price, 8: total volume, 10: high price, 11: low price, 12: close price,
+            #         17: open price, 18: net change, 19: 52 week high, 20: 52 week low, 42: net % change
+            mkt_data_payload = {
+                'requestid': '2',
+                'service': 'LEVELONE_EQUITIES',
+                'command': 'SUBS',
+                'SchwabClientCustomerId': schwab_client_customer_id,
+                'SchwabClientCorrelId': schwab_client_correl_id,
+                'parameters': {
+                    'keys': symbol,
+                    "fields": "0,1,2,3,8,10,11,12,17,18,19,20,42"
+                }
             }
-        }
 
-        print("opening data stream for ", symbol)
-        ws.send(json.dumps(mkt_data_payload))
+            combined_payload = {
+                "requests": [
+                    login_payload,
+                    mkt_data_payload
+                ]
+            }
 
-    # creates websocket object
-    ws = websocket.WebSocketApp(
-        web_socket_url,
-        on_open=on_open,
-        on_error=on_error,
-        on_message=on_message,
-        on_close=on_close
-    )
+            print("opening data stream for ", symbol)
+            print(json.dumps(combined_payload))
+            ws.send(json.dumps(combined_payload))
 
-    # starts websocket thread (uncomment threading when running gui)
-    ws.run_forever()
+        # creates websocket object
+        self.ws = websocket.WebSocketApp(
+            self.web_socket_url,
+            on_open=on_open,
+            on_error=on_error,
+            on_message=on_message,
+            on_close=on_close
+        )
+        self.ws.run_forever()
+
+    # safely starts websocket thread
+    def run_market_data_socket(self, symbol):
+        ws_thread = threading.Thread(target=lambda: self.open_market_data_websocket(symbol))
+        ws_thread.daemon = True
+        ws_thread.start()

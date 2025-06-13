@@ -76,7 +76,7 @@ class SchwabAuthWindow(QMainWindow):
         if authorized:
             self.main_window = MainSchwabWindow()
             self.main_window.show()
-            self.hide()
+            self.close()
         else:
             print("User not authorized")
 
@@ -85,7 +85,7 @@ class SchwabAuthWindow(QMainWindow):
         if authorized:
             self.main_window = MainSchwabWindow()
             self.main_window.show()
-            self.hide()
+            self.close()
         else:
             print("User not authorized")
 
