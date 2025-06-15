@@ -129,3 +129,23 @@ class SchwabMarketData(QObject):
         ws_thread = threading.Thread(target=lambda: self.open_market_data_websocket(symbol))
         ws_thread.daemon = True
         ws_thread.start()
+
+
+    def fetch_price_history(self, symbol, period, frequency):
+        # validate access token before API call
+        validate_access_token()
+        with open('schwab_connections/tokens.json', 'r') as file:
+            token_data = json.load(file)
+
+        access_token = token_data['access_token']
+
+        # parses period and frequency
+        period_value = period.split()[0]
+        frequency_value = frequency.split()[0]
+        print(period_value)
+
+        price_history = requests.get(f"{self.base_url}/pricehistory?symbol={symbol}&periodType=day&"
+                                     f"period={period_value}&frequencyType=minute&frequency={frequency_value}",
+                                      headers={'Authorization': f'Bearer {access_token}'})
+        data = price_history.json()
+        return data['candles']

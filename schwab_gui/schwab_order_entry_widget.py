@@ -1,5 +1,6 @@
 import json
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QTextEdit, \
     QGroupBox, QFormLayout
 
@@ -10,6 +11,9 @@ from schwab_connections.schwab_market_data import SchwabMarketData
 from schwab_connections.schwab_preview_order import place_preview_order
 
 class SchwabOrderEntryWidget(QWidget):
+    # signal for preview orders table
+    order_created = pyqtSignal()
+
     def __init__(self, mongo_client):
         super().__init__()
         self.mongo_client = mongo_client
@@ -231,5 +235,6 @@ class SchwabOrderEntryWidget(QWidget):
         # inserts order into database
         try:
             insert_order_entry(self.mongo_client, order_preview)
+            self.order_created.emit()
         except Exception as e:
             print(f'Error inserting order document: {e}')

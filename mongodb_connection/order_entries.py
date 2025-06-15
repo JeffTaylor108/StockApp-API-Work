@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from schwab_connections.schwab_acccount_data import get_account_num
 
 
@@ -29,7 +31,8 @@ def insert_order_entry(client, order_preview):
         "individual_price": individual_price,
         "quantity": quantity,
         "order_value": order_value,
-        "status": status
+        "status": status,
+        "timestamp": datetime.now()
     }
 
     inserted_id = order_history_collection.insert_one(order_doc).inserted_id
@@ -46,6 +49,8 @@ def fetch_order_entries(client):
     return previous_orders
 
 # deletes order from database and history table
-def delete_order(client, id):
+def database_delete_order(client, id):
 
-    print('placeholder until implemented')
+    order_history_collection = client.Schwab_DB.preview_order_entries
+    deleted_order = order_history_collection.delete_one({'_id': id})
+    print(f'Order deleted: {deleted_order}')

@@ -3,7 +3,7 @@ from functools import partial
 from PyQt6.QtWidgets import QWidget, QLabel, QTableWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidgetItem
 
 from gui import styling
-from mongodb_connection.order_entries import fetch_order_entries, delete_order
+from mongodb_connection.order_entries import fetch_order_entries, database_delete_order
 
 
 class PreviewOrderHistoryWidget(QWidget):
@@ -48,9 +48,8 @@ class PreviewOrderHistoryWidget(QWidget):
             row_position = self.orders_table.rowCount()
             self.orders_table.insertRow(row_position)
 
-            cancel_button = QPushButton("Delete")
-            cancel_button.clicked.connect(partial(delete_order, self.mongo_client, order['_id']))
-            #^^^^^^^^^^^^^^^^^^ fix
+            delete_button = QPushButton("Delete")
+            delete_button.clicked.connect(partial(self.delete_order, order['_id']))
 
             self.orders_table.setItem(row_position, 0, QTableWidgetItem(order['symbol']))
             self.orders_table.setItem(row_position, 1, QTableWidgetItem(order['order_type']))
@@ -59,4 +58,10 @@ class PreviewOrderHistoryWidget(QWidget):
             self.orders_table.setItem(row_position, 4, QTableWidgetItem(str(order['quantity'])))
             self.orders_table.setItem(row_position, 5, QTableWidgetItem(str(order['order_value'])))
             self.orders_table.setItem(row_position, 6, QTableWidgetItem(order['status']))
-            self.orders_table.setCellWidget(row_position, 7, cancel_button)
+            self.orders_table.setCellWidget(row_position, 7, delete_button)
+
+    # deletes order document from database and table
+    def delete_order(self, order_id):
+
+        database_delete_order(self.mongo_client, order_id) # deletes from database
+        self.populate_order_history_table() # repopulates table with orders
