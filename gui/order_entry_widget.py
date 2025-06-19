@@ -76,6 +76,7 @@ class OrderEntryWidget(QWidget):
 
         # estimated cost display
         self.estimated_cost = QLabel("")
+        self.estimated_cost.setWordWrap(True)
         self.estimated_cost.hide()
 
         # bracket order button
@@ -200,11 +201,11 @@ class OrderEntryWidget(QWidget):
         if self.order_type_dropdown.currentText() == "LMT":
 
             if self.buy_sell_group.checkedButton().text() == "BUY":
-                buy_cost = int(self.limit_price.text()) * int(self.quantity.text())
+                buy_cost = float(self.limit_price.text()) * int(self.quantity.text())
                 self.estimated_cost.setText(f"If this order is triggered, it will cost around ${buy_cost} USD")
 
             elif self.buy_sell_group.checkedButton().text() == "SELL":
-                sell_price = int(self.limit_price.text()) * int(self.quantity.text())
+                sell_price = float(self.limit_price.text()) * int(self.quantity.text())
                 self.estimated_cost.setText(f"If this order is triggered, it will sell at around ${sell_price} USD")
 
         self.estimated_cost.show()
@@ -221,16 +222,15 @@ class OrderEntryWidget(QWidget):
         quantity: int = int(self.quantity.text())
         action = self.buy_sell_group.checkedButton().text()
 
-        # bracket order vars
-        take_profit = float(self.profit_taker_input.text())
-        stop_loss = float(self.stop_loss_input.text())
-
         print(f"Contract: {contract},\n Order Type: {order_type}, Quantity: {quantity}, Action: {action}")
 
         if order_type == "LMT": # checks if limit order
             limit_price = float(self.limit_price.text())
 
             if self.is_bracket_order: # checks if bracket order
+                take_profit = float(self.profit_taker_input.text())
+                stop_loss = float(self.stop_loss_input.text())
+
                 submit_bracket_order(self.app, contract, action, order_type, quantity, take_profit, stop_loss, limit_price)
             else:
                 submit_order(self.app, contract, action, order_type, quantity, limit_price)
@@ -238,6 +238,9 @@ class OrderEntryWidget(QWidget):
         else:
 
             if self.is_bracket_order: # checks if bracket order
+                take_profit = float(self.profit_taker_input.text())
+                stop_loss = float(self.stop_loss_input.text())
+
                 submit_bracket_order(self.app, contract, action, order_type, quantity, take_profit, stop_loss)
             else:
                 submit_order(self.app, contract, action, order_type, quantity)

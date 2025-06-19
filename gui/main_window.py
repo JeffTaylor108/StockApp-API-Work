@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout, QFrame, \
-    QDialog, QDialogButtonBox, QHBoxLayout
+    QDialog, QDialogButtonBox, QHBoxLayout, QTabWidget
 from PyQt6.QtCore import QSize, Qt
 
 import sys
@@ -7,6 +7,7 @@ import sys
 from ibapi.contract import Contract
 
 from gui.activity_widget import ActivityWidget
+from gui.market_scanner_widget import MarketScannerWidget
 from gui.order_entry_widget import OrderEntryWidget
 from gui.portfolio_widget import PortfolioWidget
 from gui.stock_data_widget import StockDataWidget
@@ -26,16 +27,16 @@ class MainWindow(QMainWindow):
         # widgets to be added to layout
 
         # Order Entry widget
-        self.order_entry_widget = OrderEntryWidget(app)
+        #self.order_entry_widget = OrderEntryWidget(app)
 
         # Stock News widget
         self.stock_news_widget = StockNewsWidget(app)
 
         # Stock Graphs widget
-        self.stock_graphs_widget = StockGraphWidget(app)
+        #self.stock_graphs_widget = StockGraphWidget(app)
 
         # Stock Data Widget
-        self.stock_data_widget = StockDataWidget(app)
+        #self.stock_data_widget = StockDataWidget(app)
 
         # Portfolio Widget
         self.portfolio_widget = PortfolioWidget(app)
@@ -43,12 +44,30 @@ class MainWindow(QMainWindow):
         # Activity Widget
         self.activity_widget = ActivityWidget(app)
 
+        # Market Scanner Widget
+        self.market_scanner_widget = MarketScannerWidget(app)
+
+        # Portfolio/Market Scanner tabs
+        tab_widget = QTabWidget()
+        portfolio_tab = self.portfolio_widget
+        scanner_tab = self.market_scanner_widget
+
+        tab_widget.addTab(portfolio_tab, "Portfolio")
+        tab_widget.addTab(scanner_tab, "Market Scanner")
+
+        # widget sizing
+        # self.order_entry_widget.setMinimumSize(250, 600)
+        # self.stock_data_widget.setMinimumSize(250, 600)
+        # self.stock_graphs_widget.setMinimumSize(700, 600)
+        self.portfolio_widget.setMinimumSize(650, 600)
+        self.activity_widget.setMinimumSize(500, 300)
+
         # horizontal layout
         side_layout = QHBoxLayout()
-        side_layout.addWidget(self.order_entry_widget)
-        side_layout.addWidget(self.stock_data_widget)
-        side_layout.addWidget(self.stock_graphs_widget)
-        side_layout.addWidget(self.portfolio_widget)
+        # side_layout.addWidget(self.order_entry_widget)
+        # side_layout.addWidget(self.stock_data_widget)
+        # side_layout.addWidget(self.stock_graphs_widget)
+        side_layout.addWidget(tab_widget)
 
         # horizontal bottom layout
         bottom_layout = QHBoxLayout()

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from ibapi.client import *
+from ibapi.scanner import ScanData
 from ibapi.wrapper import *
 from ibapi.contract import *
 import time
@@ -89,6 +90,9 @@ class StockApp(EWrapper, EClient, QObject):
         self.find_active_orders_event = threading.Event()
         self.completed_orders = []
         self.active_orders = {}
+
+        # variables for market scanner
+        self.open_scanner_ids = []
 
 
     # generates reqIds for internal use
@@ -368,6 +372,21 @@ class StockApp(EWrapper, EClient, QObject):
     def historicalDataEnd(self, reqId, start, end):
         self.find_market_data_bars_event.set()
         print("HistoricalDataEnd. ReqId:", reqId, "from", start, "to", end)
+
+
+# --------------------------------Market Scanner Endpoint--------------------------------------------------------------------
+
+    # receives valid parameters
+    def scannerParameters(self, xml):
+        with open('ibapi_connections/scanner.xml', 'w') as file:
+            file.write(xml)
+        print("Received all Scanner Parameters")
+
+    # receives the subscription and details of requested scanner
+    def scannerData(self, reqId, rank, contractDetails, distance, benchmark, projection, legsStr):
+        self.open_scanner_ids.append(reqId)
+        print("ScannerData. ReqId:", reqId,
+              ScanData(contractDetails.contract, rank, distance, benchmark, projection, legsStr))
 
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
 

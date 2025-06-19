@@ -27,11 +27,11 @@ class StockDataWidget(QWidget):
         self.app.stock_symbol_changed.connect(self.handle_symbol_change_signal)
 
         # data display
-        self.price = QLabel("")
-        self.price_differential = QLabel("")
-        self.volume = QLabel("")
-        self.bid_and_ask = QLabel("")
-        self.high_and_low = QLabel("")
+        self.price = QLabel("$")
+        self.price_differential = QLabel("Price compared to open: ")
+        self.volume = QLabel("Today's volume: ")
+        self.bid_and_ask = QLabel("Bid/Ask: ")
+        self.high_and_low = QLabel("Hi/Lo:")
         self.app.stock_prices_updated.connect(self.update_data)
 
         # layout
@@ -70,16 +70,29 @@ class StockDataWidget(QWidget):
         self.previous_stock_req_id = stock_data.req_id
 
         self.price.setText(f"${stock_data.last}")
-        price_difference = round(stock_data.last - stock_data.open, 2)
-        price_difference_percent = round(price_difference / stock_data.open * 100, 2)
-        if price_difference >= 0:
-            self.price_differential.setStyleSheet("color: green;")
+
+        # handles if market never opened that day
+        if stock_data.open == 0.0:
+            self.price_differential.setText("Price compared to open: Data unavailable")
+            self.volume.setText("Today's volume: Data unavailable")
+            self.bid_and_ask.setText("Bid/Ask: Data unavailable")
+            self.high_and_low.setText("Hi/Lo: Data unavailable")
+            self.price_differential.setStyleSheet("color: gray;")
+            self.volume.setStyleSheet("color: gray;")
+            self.bid_and_ask.setStyleSheet("color: gray;")
+            self.high_and_low.setStyleSheet("color: gray;")
         else:
-            self.price_differential.setStyleSheet("color: red;")
-        self.price_differential.setText(f"Price compared to open: {price_difference}    {price_difference_percent}%")
-        self.volume.setText(f"Today's volume: {stock_data.volume}")
-        self.bid_and_ask.setText(f"Bid/Ask: {stock_data.bid} x {stock_data.ask}")
-        self.high_and_low.setText(f"Hi/Lo: {stock_data.high} x {stock_data.low}")
+            price_difference = round(stock_data.last - stock_data.open, 2)
+            price_difference_percent = round(price_difference / stock_data.open * 100, 2)
+            if price_difference >= 0:
+                self.price_differential.setStyleSheet("color: green;")
+            else:
+                self.price_differential.setStyleSheet("color: red;")
+
+            self.price_differential.setText(f"Price compared to open: {price_difference}    {price_difference_percent}%")
+            self.volume.setText(f"Today's volume: {stock_data.volume}")
+            self.bid_and_ask.setText(f"Bid/Ask: {stock_data.bid} x {stock_data.ask}")
+            self.high_and_low.setText(f"Hi/Lo: {stock_data.high} x {stock_data.low}")
 
     def handle_symbol_change_signal(self):
         self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)

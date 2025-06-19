@@ -98,14 +98,17 @@ class SchwabAuthWindow(QMainWindow):
         else:
             countdown_in_epoch = float(expire_time) - time.time()
 
-            days = countdown_in_epoch // 86400
-            seconds_left = countdown_in_epoch % 86400
+            if countdown_in_epoch > 0:
+                days = countdown_in_epoch // 86400
+                seconds_left = countdown_in_epoch % 86400
 
-            hours = seconds_left // 3600
-            seconds_left = seconds_left % 3600
+                hours = seconds_left // 3600
+                seconds_left = seconds_left % 3600
 
-            minutes = seconds_left // 60
-            seconds = seconds_left % 60
+                minutes = seconds_left // 60
+                seconds = seconds_left % 60
 
-            countdown = f"{int(days)} days, {int(hours)} hours, {int(minutes)} min, {int(seconds)} sec"
-            self.token_expire_countdown.setText(countdown)
+                countdown = f"{int(days)} days, {int(hours)} hours, {int(minutes)} min, {int(seconds)} sec"
+                self.token_expire_countdown.setText(countdown)
+            else:
+                self.token_expire_countdown.setText("Token Expired")

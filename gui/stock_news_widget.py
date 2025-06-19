@@ -86,6 +86,7 @@ class StockNewsWidget(QWidget):
         print("from headline click:" + article_text)
 
         dialog = ArticleDialog(article_text)
+        dialog.setMinimumSize(800, 600)
         dialog.exec()
 
     def get_portfolio_news(self):
