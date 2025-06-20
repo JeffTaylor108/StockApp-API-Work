@@ -27,6 +27,7 @@ class StockApp(EWrapper, EClient, QObject):
     stock_symbol_changed = pyqtSignal()
     available_funds_updated = pyqtSignal()
     pnl_updated = pyqtSignal()
+    active_scanners_updated = pyqtSignal(ScanData)
 
     def __init__(self):
         EClient.__init__(self, self)
@@ -93,6 +94,8 @@ class StockApp(EWrapper, EClient, QObject):
 
         # variables for market scanner
         self.open_scanner_ids = []
+        self.scanner_data_dict = {}
+        self.scanner_contract_req_ids = []
 
 
     # generates reqIds for internal use
@@ -385,6 +388,7 @@ class StockApp(EWrapper, EClient, QObject):
     # receives the subscription and details of requested scanner
     def scannerData(self, reqId, rank, contractDetails, distance, benchmark, projection, legsStr):
         self.open_scanner_ids.append(reqId)
+        self.active_scanners_updated.emit(ScanData(contractDetails.contract, rank))
         print("ScannerData. ReqId:", reqId,
               ScanData(contractDetails.contract, rank, distance, benchmark, projection, legsStr))
 

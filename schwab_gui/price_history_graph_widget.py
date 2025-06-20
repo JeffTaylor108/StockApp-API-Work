@@ -33,7 +33,7 @@ class SchwabPriceHistoryGraphWidget(QWidget):
 
         # frequency of candles input
         self.candle_frequency_dropdown = QComboBox()
-        self.candle_frequency_dropdown.addItems(["30 minutes", "15 minutes", "5 minutes"])
+        self.candle_frequency_dropdown.addItems(["30 minutes", "15 minutes", "5 minutes", "1 minute"])
 
         # container for query params
         search_query_params = QHBoxLayout()
