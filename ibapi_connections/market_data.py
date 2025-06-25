@@ -63,9 +63,10 @@ def get_portfolio_price_stream(app, contract):
     else:
         print(f'Price stream for {contract.symbol} timed out')
 
-# requests snapshot, specifically for contracts subscribed to in market scanners
-def get_snapshot(app, contract):
+# requests live mkt data for market scanner
+def get_scanner_mkt_data(app, contract, scanner_req_id):
 
     req_id = app.getNextReqId()
-    app.scanner_contract_req_ids.append(req_id)
-    app.reqMktData(req_id, contract, "", False, False, [])
+    app.scanner_contract_req_ids[req_id] = scanner_req_id
+    app.scanner_contract_ids_to_symbol[req_id] = contract.symbol
+    app.reqMktData(req_id, contract, "", True, False, [])

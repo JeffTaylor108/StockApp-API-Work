@@ -6,7 +6,9 @@ from ibapi.scanner import ScannerSubscription
 from ibapi.tag_value import TagValue
 
 from gui import styling
-from ibapi_connections.market_scanner import req_scanner_subscription
+from ibapi_connections.market_data import get_scanner_mkt_data
+from ibapi_connections.market_scanner import req_scanner_subscription, req_saved_scanner_subscription
+from mongodb_connection.IBKR_market_scanners import mongo_fetch_scanners
 
 
 class MarketScannerWidget(QWidget):
@@ -17,6 +19,9 @@ class MarketScannerWidget(QWidget):
         self.filter_tags = []
         self.scan_code_dict = {}
         self.tag_category_dict = {}
+        self.symbol_to_row_maps = {} # stores row table mappings of symbol to row
+        self.scanner_tables = {} # display name references QTableWidget
+        self.current_table_req_id = None # keeps track of which table is selected via QTab
 
         # widgets added to layout
         widget_label = QLabel("Market Scanners")
@@ -25,26 +30,18 @@ class MarketScannerWidget(QWidget):
         scanner_table_label = QLabel("Current Active Scanners")
         scanner_note = QLabel("Note: max 10 scanners active")
         self.scanner_tabs = QTabWidget()
-        self.scanner_table = QTableWidget()
-        self.scanner_table.setColumnCount(2)
-        self.scanner_table.setHorizontalHeaderLabels(["Symbol", "Last Price"])
-        self.scanner_table.setRowCount(50)
-        self.scanner_tabs.addTab(self.scanner_table, "Scanner 1")
-
-        self.scanner_table2 = QTableWidget()
-        self.scanner_tabs.addTab(self.scanner_table2, "Scanner 2")
 
         # selects scanner code category
-        scan_code_label = QLabel("Select Scanner Category")
+        scan_code_label = QLabel("1. Select Scanner Category")
         self.scan_code_selector = QComboBox()
         self.scan_code_selector.currentTextChanged.connect(self.change_preview_category)
 
         # selects filtering tag category
-        tag_category_label = QLabel("Select Filter Tag")
+        tag_category_label = QLabel("2. Select Filter Tag")
         self.tag_category_selector = QComboBox()
 
         # selects filtering tag value
-        tag_value_label = QLabel("Filter Tag Value")
+        tag_value_label = QLabel("3. Filter Tag Value")
         self.tag_value_input = QLineEdit()
 
         # adds tag to scanner object
@@ -73,7 +70,8 @@ class MarketScannerWidget(QWidget):
 
         create_scanner_button = QPushButton("Create Market Scanner")
         create_scanner_button.pressed.connect(self.create_scanner)
-        self.app.active_scanners_updated.connect(self.update_scanner_tables)
+        self.app.active_scanners_updated.connect(self.update_scanner_table)
+        self.app.scanner_price_updated.connect(self.update_scanner_table_prices)
 
         # layout
         layout = QVBoxLayout()
@@ -106,6 +104,8 @@ class MarketScannerWidget(QWidget):
         self.find_valid_scan_codes()
         self.find_valid_tag_categories()
 
+        self.initialize_saved_scanners()
+
     # gets scanner parameters and sends subscription request to TWS
     def create_scanner(self):
 
@@ -120,15 +120,41 @@ class MarketScannerWidget(QWidget):
         print(f'Scanner code: {scanner.scanCode}')
         print(f'Filter Tags: {self.filter_tags}')
 
-        req_scanner_subscription(self.app, scanner, self.filter_tags)
+        req_scanner_subscription(self.app, scanner, self.filter_tags, display_name)
 
-    # creates new scanner table and adds it to tabs
-    def update_scanner_tables(self, scan_data_obj):
+    # updates scanner tables with new scanner rankings
+    def update_scanner_table(self, scan_data_obj, req_id):
         rank = scan_data_obj.rank
         symbol = scan_data_obj.contract.symbol
+        get_scanner_mkt_data(self.app, scan_data_obj.contract, req_id)
+
+        # creates reference to table and inserts into tab
+        if req_id not in self.scanner_tables:
+            scanner_table = QTableWidget()
+            scanner_table.setColumnCount(2)
+            scanner_table.setHorizontalHeaderLabels(["Symbol", "Last Price"])
+            scanner_table.setRowCount(50)
+
+            self.symbol_to_row_maps[req_id] = {}
+            self.scanner_tables[req_id] = scanner_table
+            self.scanner_tabs.addTab(scanner_table, str(req_id))
+
+        table = self.scanner_tables.get(req_id)
+        symbol_to_row = self.symbol_to_row_maps.get(req_id)
+
+        symbol_to_row[symbol] = int(rank)
+        table.setItem(int(rank), 0, QTableWidgetItem(symbol))
+        table.setItem(int(rank), 1, QTableWidgetItem('--'))
         print(f'Rank: {rank}, Symbol: {symbol}')
 
-        self.scanner_table.setItem(int(rank), 0, QTableWidgetItem(symbol))
+    # updates prices in scanner table
+    def update_scanner_table_prices(self, symbol, price, scanner_req_id):
+        table = self.scanner_tables.get(scanner_req_id)
+        symbol_to_row = self.symbol_to_row_maps.get(scanner_req_id)
+
+        if symbol in symbol_to_row:
+            row = symbol_to_row[symbol]
+            table.setItem(row, 1, QTableWidgetItem(f"{price:.2f}"))
 
     # adds new tag to scanner
     def add_tag(self):
@@ -148,8 +174,9 @@ class MarketScannerWidget(QWidget):
             code = scan_type.find("scanCode")
             display_name = scan_type.find("displayName")
             if code is not None and code.text and display_name is not None and display_name.text:
-                self.scan_code_dict[display_name.text.strip()] = code.text.strip()
-                self.scan_code_selector.addItem(display_name.text.strip())
+                if "AltaVista" not in display_name.text.strip() and "Refinitiv" not in display_name.text.strip():
+                    self.scan_code_dict[display_name.text.strip()] = code.text.strip()
+                    self.scan_code_selector.addItem(display_name.text.strip())
         print(self.scan_code_dict)
 
     # fills tag_category_selector with valid tags and adds them to dictionary matching display names to code names
@@ -209,3 +236,21 @@ class MarketScannerWidget(QWidget):
     def clear_tags(self):
         self.preview_tags_list.clear()
         self.filter_tags.clear()
+
+    # initializes scanners in TWS API from mongo database
+    def initialize_saved_scanners(self):
+        saved_scanners = mongo_fetch_scanners(self.app.client)
+        for scanner in saved_scanners:
+
+            scanner_details_obj = ScannerSubscription()
+            scanner_details_obj.instrument = scanner["scanner_details"]["instrument"]
+            scanner_details_obj.locationCode = scanner["scanner_details"]["locationCode"]
+            scanner_details_obj.scanCode = scanner["scanner_details"]["scanCode"]
+
+            tag_values = []
+            for tag in scanner["tags"]:
+                tag_name = tag["tag"]
+                value = tag["value"]
+                tag_values.append(TagValue(tag_name, value))
+
+            req_saved_scanner_subscription(self.app, scanner_details_obj, tag_values)

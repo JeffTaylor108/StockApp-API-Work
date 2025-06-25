@@ -11,6 +11,8 @@ from PyQt6.QtCore import pyqtSignal, QObject
 import datetime
 from dataclasses import dataclass, asdict
 
+from mongodb_connection.mongo_client import initialize_mongo_client
+
 
 # EClient is used to send requests to TWS, EWrapper is used to receive responses from TWS
 
@@ -27,13 +29,17 @@ class StockApp(EWrapper, EClient, QObject):
     stock_symbol_changed = pyqtSignal()
     available_funds_updated = pyqtSignal()
     pnl_updated = pyqtSignal()
-    active_scanners_updated = pyqtSignal(ScanData)
+    active_scanners_updated = pyqtSignal(ScanData, int)
+    scanner_price_updated = pyqtSignal(str, float, int)
 
     def __init__(self):
         EClient.__init__(self, self)
         QObject.__init__(self)
         self.nextOrderId = None
         self.nextReqId = 1
+
+        # mongodb client
+        self.client = initialize_mongo_client()
 
         # currently available funds
         self.account = ""
@@ -95,7 +101,9 @@ class StockApp(EWrapper, EClient, QObject):
         # variables for market scanner
         self.open_scanner_ids = []
         self.scanner_data_dict = {}
-        self.scanner_contract_req_ids = []
+        self.scanner_contract_ids_to_symbol = {}
+        self.scanner_contract_req_ids = {} # assigns scanner req id to mkt data req id
+        self.scanner_symbol_prices = {}
 
 
     # generates reqIds for internal use
@@ -199,6 +207,7 @@ class StockApp(EWrapper, EClient, QObject):
     # tickList docs: https://ibkrcampus.com/campus/ibkr-api-page/twsapi-doc/#available-tick-types
     def tickPrice(self, reqId, tickType, price, attrib):
 
+        # handles market data requests from portfolio
         if reqId in self.req_id_to_portfolio_symbol:
 
             # finds associated symbol in portfolio from req_id
@@ -217,6 +226,14 @@ class StockApp(EWrapper, EClient, QObject):
                 if event and not event.is_set():
                     event.set()
                 self.portfolio_prices_updated.emit()
+
+        # handles market data requests for market scanner data
+        elif reqId in self.scanner_contract_req_ids:
+            symbol = self.scanner_contract_ids_to_symbol.get(reqId)
+
+            if tickType == 68:
+                self.scanner_price_updated.emit(symbol, price, self.scanner_contract_req_ids.get(reqId))
+                print(f"Scanner last price for {symbol}: {price}")
 
         else:
             if tickType == 66:
@@ -388,7 +405,7 @@ class StockApp(EWrapper, EClient, QObject):
     # receives the subscription and details of requested scanner
     def scannerData(self, reqId, rank, contractDetails, distance, benchmark, projection, legsStr):
         self.open_scanner_ids.append(reqId)
-        self.active_scanners_updated.emit(ScanData(contractDetails.contract, rank))
+        self.active_scanners_updated.emit(ScanData(contractDetails.contract, rank), reqId)
         print("ScannerData. ReqId:", reqId,
               ScanData(contractDetails.contract, rank, distance, benchmark, projection, legsStr))
 
@@ -398,7 +415,6 @@ class StockApp(EWrapper, EClient, QObject):
     def check_and_emit_complete_data(self):
         data_dict = asdict(self.market_data)
 
-        # Define what counts as "unfilled" – here we assume None or 0 is unfilled
         all_filled = all(
             value is not None for key, value in data_dict.items() if key != 'req_id'
         )
