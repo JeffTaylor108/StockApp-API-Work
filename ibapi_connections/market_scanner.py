@@ -1,5 +1,4 @@
-from mongodb_connection.IBKR_market_scanners import mongo_insert_market_scanner
-
+from mongodb_connection.IBKR_market_scanners import mongo_insert_market_scanner, update_req_id
 
 # writes valid parameters for TWS scanner to xml file
 def req_scanner_params(app):
@@ -14,7 +13,7 @@ def req_scanner_subscription(app, scanner_details, filter_values, display_name):
 
     if len(filter_values) < 1:
         app.reqScannerSubscription(next_req_id, scanner_details, [], None)
-        mongo_insert_market_scanner(app.client, next_req_id, scanner_details, [])
+        mongo_insert_market_scanner(app.client, next_req_id, display_name, scanner_details, [])
     else:
         app.reqScannerSubscription(next_req_id, scanner_details, [], filter_values)
 
@@ -29,10 +28,13 @@ def req_scanner_subscription(app, scanner_details, filter_values, display_name):
         mongo_insert_market_scanner(app.client, next_req_id, display_name, scanner_details, tags)
 
 # sends market scanner subscription without inserting to mongo
-def req_saved_scanner_subscription(app, scanner_details, filter_values):
+def req_saved_scanner_subscription(app, scanner_details, filter_values, object_id):
 
     print(f'Sending request to subscribe to scanner: {scanner_details} with tags: {filter_values}')
     next_req_id = app.getNextReqId()
+
+    # replaces stale req_id in mongodb with new one
+    update_req_id(app.client, next_req_id, object_id)
 
     if len(filter_values) < 1:
         app.reqScannerSubscription(next_req_id, scanner_details, [], None)
@@ -42,3 +44,4 @@ def req_saved_scanner_subscription(app, scanner_details, filter_values):
 # cancels market scanner subscription
 def cancel_subscription(app, reqId):
     app.cancelScannerSubscription(reqId)
+    print(f"Closing scanner subscription for scanner with id {reqId}")

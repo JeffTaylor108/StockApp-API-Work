@@ -31,6 +31,8 @@ class StockApp(EWrapper, EClient, QObject):
     pnl_updated = pyqtSignal()
     active_scanners_updated = pyqtSignal(ScanData, int)
     scanner_price_updated = pyqtSignal(str, float, int)
+    scanner_volume_updated = pyqtSignal(str, int, int)
+    scanner_price_change_updated = pyqtSignal(str, dict, int)
 
     def __init__(self):
         EClient.__init__(self, self)
@@ -104,6 +106,7 @@ class StockApp(EWrapper, EClient, QObject):
         self.scanner_contract_ids_to_symbol = {}
         self.scanner_contract_req_ids = {} # assigns scanner req id to mkt data req id
         self.scanner_symbol_prices = {}
+        self.scanner_price_change = {} # assigns last price and open price to symbol from scanner
 
 
     # generates reqIds for internal use
@@ -231,9 +234,25 @@ class StockApp(EWrapper, EClient, QObject):
         elif reqId in self.scanner_contract_req_ids:
             symbol = self.scanner_contract_ids_to_symbol.get(reqId)
 
+            if symbol not in self.scanner_price_change:
+                self.scanner_price_change[symbol] = {"last_price": None, "open_price": None}
+
             if tickType == 68:
+                self.scanner_price_change[symbol]["last_price"] = price
                 self.scanner_price_updated.emit(symbol, price, self.scanner_contract_req_ids.get(reqId))
                 print(f"Scanner last price for {symbol}: {price}")
+
+            elif tickType == 76:
+                self.scanner_price_change[symbol]["open_price"] = price
+                print(f"Scanner open price for {symbol}: {price}")
+
+            if self.scanner_price_change[symbol]["last_price"] is not None and self.scanner_price_change[symbol]["open_price"] is not None:
+                self.scanner_price_change_updated.emit(symbol, self.scanner_price_change[symbol],
+                                                       self.scanner_contract_req_ids.get(reqId)
+                )
+
+                # clears values so updates continue to emit
+                self.scanner_price_change[symbol] = {"last_price": None, "open_price": None}
 
         else:
             if tickType == 66:
@@ -273,11 +292,19 @@ class StockApp(EWrapper, EClient, QObject):
     # same as tickPrice
     def tickSize(self, reqId, tickType, size):
 
-        if tickType == 74:
-            self.market_data.volume = size
-            print(f"Trading volume for day: {size}")
+        if reqId in self.scanner_contract_req_ids:
+            symbol = self.scanner_contract_ids_to_symbol.get(reqId)
 
-        self.check_and_emit_complete_data()
+            if tickType == 74:
+                self.scanner_volume_updated.emit(symbol, size, self.scanner_contract_req_ids.get(reqId))
+                print(f"Scanner volume for {symbol}: {size}")
+
+        else:
+            if tickType == 74:
+                self.market_data.volume = size
+                print(f"Trading volume for day: {size}")
+
+            self.check_and_emit_complete_data()
 
         # commented out for refactoring
         # print(f"Tick Size: reqId: {reqId}, tickType: {tickType}, size: {size}")
