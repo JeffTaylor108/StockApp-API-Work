@@ -67,7 +67,9 @@ class OrderEntryWidget(QWidget):
 
         # buy/sell radio buttons
         self.buy_button = QRadioButton("BUY")
+        self.buy_button.pressed.connect(self.set_bracket_order_dropdowns)
         self.sell_button = QRadioButton("SELL")
+        self.sell_button.pressed.connect(self.set_bracket_order_dropdowns)
 
         self.buy_sell_group = QButtonGroup()
         self.buy_sell_group.addButton(self.buy_button)
@@ -92,8 +94,14 @@ class OrderEntryWidget(QWidget):
         # bracket order inputs
         profit_taker_label = QLabel("Profit Taker:")
         self.profit_taker_input = QLineEdit()
+        self.profit_taker_dropdown = QComboBox()
+        self.profit_taker_dropdown.currentIndexChanged.connect(self.set_profit_taker_from_dropdown)
+
         stop_loss_label = QLabel("Stop Loss:")
+        self.stop_loss_dropdown = QComboBox()
         self.stop_loss_input = QLineEdit()
+        self.stop_loss_dropdown.currentIndexChanged.connect(self.set_stop_loss_from_dropdown)
+
         self.attach_bracket_button = QPushButton("Attach Bracket")
         self.attach_bracket_button.clicked.connect(self.attach_bracket)
         self.remove_bracket_button = QPushButton("Remove Bracket")
@@ -101,10 +109,16 @@ class OrderEntryWidget(QWidget):
 
         # bracket order input container
         bracket_order_layout = QVBoxLayout()
+        profit_taker_horizontal_bar = QHBoxLayout()
+        stop_loss_horizontal_bar = QHBoxLayout()
         bracket_order_layout.addWidget(profit_taker_label)
-        bracket_order_layout.addWidget(self.profit_taker_input)
+        profit_taker_horizontal_bar.addWidget(self.profit_taker_input)
+        profit_taker_horizontal_bar.addWidget(self.profit_taker_dropdown)
+        bracket_order_layout.addLayout(profit_taker_horizontal_bar)
         bracket_order_layout.addWidget(stop_loss_label)
-        bracket_order_layout.addWidget(self.stop_loss_input)
+        stop_loss_horizontal_bar.addWidget(self.stop_loss_input)
+        stop_loss_horizontal_bar.addWidget(self.stop_loss_dropdown)
+        bracket_order_layout.addLayout(stop_loss_horizontal_bar)
         bracket_order_layout.addWidget(self.attach_bracket_button)
         bracket_order_layout.addWidget(self.remove_bracket_button)
 
@@ -275,3 +289,73 @@ class OrderEntryWidget(QWidget):
         self.stop_loss_input.clear()
 
         print('Bracket removed!')
+
+    # sets bracket order dropdown with values ranging from 10-100% of the stock's price
+    def set_bracket_order_dropdowns(self):
+        button_pressed = self.sender()
+
+        if button_pressed.text() == "BUY":
+            price_text = self.ask_price.text()
+            _, _, price = price_text.partition("$")
+
+            self.profit_taker_dropdown.clear()
+            self.stop_loss_dropdown.clear()
+
+            for i in range(1, 11):
+                increment = float(price) * (i * 0.10)
+                formatted_price = f"{round(i * 0.10 * 100)}%"
+                self.profit_taker_dropdown.addItem(formatted_price)
+                self.stop_loss_dropdown.addItem(formatted_price)
+
+        if button_pressed.text() == "SELL":
+            price_text = self.ask_price.text()
+            _, _, price = price_text.partition("$")
+
+            self.profit_taker_dropdown.clear()
+            self.stop_loss_dropdown.clear()
+
+            for i in range(1, 11):
+                increment = float(price) * (i * 0.10)
+                formatted_price = f"{round(i * 0.10 * 100)}%"
+                self.profit_taker_dropdown.addItem(formatted_price)
+                self.stop_loss_dropdown.addItem(formatted_price)
+
+    # sets profit taker input to what was selected from dropdown
+    def set_profit_taker_from_dropdown(self):
+        dropdown_text = self.profit_taker_dropdown.currentText()
+        percentage, _, _ = dropdown_text.partition('%')
+
+        checked_button = self.buy_sell_group.checkedButton()
+        input_text = ''
+        if checked_button is not None:
+            if checked_button.text() == "BUY":
+                price_text = self.ask_price.text()
+                _, _, price = price_text.partition("$")
+                input_text = input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+
+            if checked_button.text() == "SELL":
+                price_text = self.bid_price.text()
+                _, _, price = price_text.partition("$")
+                input_text = input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+
+        self.profit_taker_input.setText(str(input_text))
+
+    # sets stop loss input to what was selected from dropdown
+    def set_stop_loss_from_dropdown(self):
+        dropdown_text = self.stop_loss_dropdown.currentText()
+        percentage, _, _ = dropdown_text.partition('%')
+
+        checked_button = self.buy_sell_group.checkedButton()
+        input_text = ''
+        if checked_button is not None:
+            if checked_button.text() == "BUY":
+                price_text = self.ask_price.text()
+                _, _, price = price_text.partition("$")
+                input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+
+            if checked_button.text() == "SELL":
+                price_text = self.bid_price.text()
+                _, _, price = price_text.partition("$")
+                input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+
+        self.stop_loss_input.setText(str(input_text))

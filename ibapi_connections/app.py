@@ -171,8 +171,12 @@ class StockApp(EWrapper, EClient, QObject):
     # defines response for reqMatchingSymbols
     def symbolSamples(self, reqId, contractDescriptions):
 
-        # extracts Contract object from contractDescriptions
-        con = contractDescriptions[0].contract
+        # extracts correct Contract object from contractDescriptions
+        con = None
+        for description in contractDescriptions:
+            if "NASDAQ" in description.contract.primaryExchange:
+                con = description.contract
+                break
 
         if con:
             self.matching_contract = con

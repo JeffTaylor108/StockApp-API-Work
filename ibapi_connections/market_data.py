@@ -38,6 +38,7 @@ def get_market_data_graph(app, contract, interval):
     app.find_market_data_bars_event.clear()
 
     app.reqMarketDataType(3)
+    print("Contract: ", contract)
     app.reqHistoricalData(app.getNextReqId(), contract, "", "1 W", interval, "TRADES", 1, 1, True, [])
 
     if app.find_market_data_bars_event.wait(timeout=5):

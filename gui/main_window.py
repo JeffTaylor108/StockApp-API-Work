@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout, QFrame, \
     QDialog, QDialogButtonBox, QHBoxLayout, QTabWidget
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
 
 import sys
 
@@ -13,6 +13,7 @@ from gui.portfolio_widget import PortfolioWidget
 from gui.stock_data_widget import StockDataWidget
 from gui.stock_graph_widget import StockGraphWidget
 from gui.stock_news_widget import StockNewsWidget
+from gui.trade_app_selection import TradeAppSelectionWidget
 from ibapi_connections.contract_data import req_contract_from_symbol
 from ibapi_connections.market_data import get_live_prices_and_volume
 from ibapi_connections.news import get_news_headlines
@@ -26,17 +27,20 @@ class MainWindow(QMainWindow):
 
         # widgets to be added to layout
 
+        # Trade App Selector widget
+        self.trading_app_selector_widget = TradeAppSelectionWidget(self)
+
         # Order Entry widget
-        #self.order_entry_widget = OrderEntryWidget(app)
+        self.order_entry_widget = OrderEntryWidget(app)
 
         # Stock News widget
         self.stock_news_widget = StockNewsWidget(app)
 
         # Stock Graphs widget
-        #self.stock_graphs_widget = StockGraphWidget(app)
+        self.stock_graphs_widget = StockGraphWidget(app)
 
         # Stock Data Widget
-        #self.stock_data_widget = StockDataWidget(app)
+        self.stock_data_widget = StockDataWidget(app)
 
         # Portfolio Widget
         self.portfolio_widget = PortfolioWidget(app)
@@ -56,17 +60,18 @@ class MainWindow(QMainWindow):
         tab_widget.addTab(scanner_tab, "Market Scanner")
 
         # widget sizing
-        # self.order_entry_widget.setMinimumSize(250, 600)
-        # self.stock_data_widget.setMinimumSize(250, 600)
-        # self.stock_graphs_widget.setMinimumSize(700, 600)
+        self.order_entry_widget.setMinimumSize(250, 600)
+        self.stock_data_widget.setMinimumSize(250, 600)
+        self.stock_graphs_widget.setMinimumSize(700, 600)
         self.portfolio_widget.setMinimumSize(650, 600)
         self.activity_widget.setMinimumSize(500, 300)
+        self.trading_app_selector_widget.setMaximumSize(300, 100)
 
         # horizontal layout
         side_layout = QHBoxLayout()
-        # side_layout.addWidget(self.order_entry_widget)
-        # side_layout.addWidget(self.stock_data_widget)
-        # side_layout.addWidget(self.stock_graphs_widget)
+        side_layout.addWidget(self.order_entry_widget)
+        side_layout.addWidget(self.stock_data_widget)
+        side_layout.addWidget(self.stock_graphs_widget)
         side_layout.addWidget(tab_widget)
 
         # horizontal bottom layout
@@ -76,6 +81,7 @@ class MainWindow(QMainWindow):
 
         # layout
         layout = QVBoxLayout()
+        layout.addWidget(self.trading_app_selector_widget)
         layout.addLayout(side_layout)
         layout.addLayout(bottom_layout)
 
@@ -91,4 +97,6 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         print("Disconnecting from TWS")
         self.app.disconnect()
+        self.thread.quit()
+        self.thread.wait()
         event.accept()

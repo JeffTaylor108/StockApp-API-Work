@@ -12,7 +12,7 @@ from schwab_gui.schwab_window import MainSchwabWindow
 class SchwabAuthWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Charles Schwab API Trading GUI")
+        self.setWindowTitle("Authorization for API Trading GUI")
 
         # widgets to be added to layout
 

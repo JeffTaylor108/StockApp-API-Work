@@ -1,22 +1,17 @@
-import json
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QHBoxLayout
 
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, QTextEdit, QTableWidget, \
-    QGridLayout, QHBoxLayout
-
-from gui import styling
 from mongodb_connection.mongo_client import initialize_mongo_client
-from schwab_connections.schwab_market_data import SchwabMarketData
-from schwab_connections.schwab_auth import get_auth_url, authorize
 from schwab_gui.preview_order_history import PreviewOrderHistoryWidget
 from schwab_gui.price_history_graph_widget import SchwabPriceHistoryGraphWidget
 from schwab_gui.schwab_order_entry_widget import SchwabOrderEntryWidget
 from schwab_gui.schwab_stock_data_widget import SchwabStockDataWidget
+from gui.trade_app_selection import TradeAppSelectionWidget
 
 
 class MainSchwabWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
         self.setWindowTitle("Charles Schwab API Trading GUI")
         self.current_stock = None
         try:
@@ -25,6 +20,7 @@ class MainSchwabWindow(QMainWindow):
             print(f'Error initializing mongo client, {e}')
 
         # widgets to be added to layout
+        trading_app_selector_widget = TradeAppSelectionWidget(self)
         stock_data_widget = SchwabStockDataWidget(self.mongo_client)
         order_entry_widget = SchwabOrderEntryWidget(self.mongo_client)
         preview_order_history = PreviewOrderHistoryWidget(self.mongo_client)
@@ -41,6 +37,7 @@ class MainSchwabWindow(QMainWindow):
 
         # layout
         layout = QVBoxLayout()
+        layout.addWidget(trading_app_selector_widget)
         layout.addWidget(stock_data_widget)
         layout.addWidget(order_entry_widget)
 
