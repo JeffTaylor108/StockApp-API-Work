@@ -60,16 +60,16 @@ class MainWindow(QMainWindow):
         tab_widget.addTab(scanner_tab, "Market Scanner")
 
         # widget sizing
-        self.order_entry_widget.setMinimumSize(250, 600)
+        self.order_entry_widget.setMinimumSize(250, 900)
         self.stock_data_widget.setMinimumSize(250, 600)
         self.stock_graphs_widget.setMinimumSize(700, 600)
         self.portfolio_widget.setMinimumSize(650, 600)
-        self.activity_widget.setMinimumSize(500, 300)
+        self.activity_widget.setMinimumSize(350, 300)
         self.trading_app_selector_widget.setMaximumSize(300, 100)
 
         # horizontal layout
         side_layout = QHBoxLayout()
-        side_layout.addWidget(self.order_entry_widget)
+        # side_layout.addWidget(self.order_entry_widget)
         side_layout.addWidget(self.stock_data_widget)
         side_layout.addWidget(self.stock_graphs_widget)
         side_layout.addWidget(tab_widget)
@@ -79,11 +79,20 @@ class MainWindow(QMainWindow):
         bottom_layout.addWidget(self.activity_widget)
         bottom_layout.addWidget(self.stock_news_widget)
 
+        # stacked layout with side_layout and bottom_layout stacked vertically
+        stacked_layout = QVBoxLayout()
+        stacked_layout.addLayout(side_layout)
+        stacked_layout.addLayout(bottom_layout)
+
+        # add order entry on left side of stacked layout
+        stacked_with_order_entry_layout = QHBoxLayout()
+        stacked_with_order_entry_layout.addWidget(self.order_entry_widget)
+        stacked_with_order_entry_layout.addLayout(stacked_layout)
+
         # layout
         layout = QVBoxLayout()
         layout.addWidget(self.trading_app_selector_widget)
-        layout.addLayout(side_layout)
-        layout.addLayout(bottom_layout)
+        layout.addLayout(stacked_with_order_entry_layout)
 
         # parent widget container for layout
         container = QWidget()

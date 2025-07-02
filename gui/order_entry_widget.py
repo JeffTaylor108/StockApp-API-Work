@@ -1,6 +1,8 @@
+import re
+
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout, QFrame, \
-    QDialog, QDialogButtonBox, QComboBox, QHBoxLayout, QRadioButton, QButtonGroup, QStyle
+    QDialog, QDialogButtonBox, QComboBox, QHBoxLayout, QRadioButton, QButtonGroup, QStyle, QGroupBox, QListWidget
 from PyQt6.QtCore import QSize, Qt, QTimer
 
 from gui import styling
@@ -112,12 +114,12 @@ class OrderEntryWidget(QWidget):
         profit_taker_horizontal_bar = QHBoxLayout()
         stop_loss_horizontal_bar = QHBoxLayout()
         bracket_order_layout.addWidget(profit_taker_label)
-        profit_taker_horizontal_bar.addWidget(self.profit_taker_input)
-        profit_taker_horizontal_bar.addWidget(self.profit_taker_dropdown)
+        profit_taker_horizontal_bar.addWidget(self.profit_taker_input, stretch=1)
+        profit_taker_horizontal_bar.addWidget(self.profit_taker_dropdown, stretch=1)
         bracket_order_layout.addLayout(profit_taker_horizontal_bar)
         bracket_order_layout.addWidget(stop_loss_label)
-        stop_loss_horizontal_bar.addWidget(self.stop_loss_input)
-        stop_loss_horizontal_bar.addWidget(self.stop_loss_dropdown)
+        stop_loss_horizontal_bar.addWidget(self.stop_loss_input, stretch=1)
+        stop_loss_horizontal_bar.addWidget(self.stop_loss_dropdown, stretch=1)
         bracket_order_layout.addLayout(stop_loss_horizontal_bar)
         bracket_order_layout.addWidget(self.attach_bracket_button)
         bracket_order_layout.addWidget(self.remove_bracket_button)
@@ -126,29 +128,67 @@ class OrderEntryWidget(QWidget):
         self.bracket_order_container.setLayout(bracket_order_layout)
         self.bracket_order_container.hide()
 
+        # order preview box
+        self.order_preview_box = QGroupBox("Order Preview")
+        order_preview_layout = QVBoxLayout()
+
+        self.preview_symbol = QLabel(f"Symbol: {self.stock_symbol_dropdown.currentText()}")
+        order_preview_layout.addWidget(self.preview_symbol)
+
+        self.preview_order_type = QLabel("Order Type: ")
+        order_preview_layout.addWidget(self.preview_order_type)
+
+        self.preview_action = QLabel("Action: ")
+        order_preview_layout.addWidget(self.preview_action)
+
+        # 'askPrice' if Market BUY order, 'bidPrice' if Market SELL order, 'price' if Limit order
+        self.preview_individual_price = QLabel("Market Price: ")
+        order_preview_layout.addWidget(self.preview_individual_price)
+
+        self.preview_quantity = QLabel("Quantity: ")
+        order_preview_layout.addWidget(self.preview_quantity)
+
+        self.preview_total_value = QLabel("Total Order Value: ")
+        order_preview_layout.addWidget(self.preview_total_value)
+
+        self.preview_brackets_label = QLabel("Brackets: ")
+        self.preview_brackets = QListWidget()
+        order_preview_layout.addWidget(self.preview_brackets_label)
+        order_preview_layout.addWidget(self.preview_brackets)
+        self.preview_brackets.hide()
+
+        self.order_preview_box.setLayout(order_preview_layout)
+
         # submit order button
         self.submit_button = QPushButton("Submit Order")
         self.submit_button.clicked.connect(self.submit_order)
 
         # layout
+        top_layout = QVBoxLayout()
+        top_layout.addWidget(widget_label)
+        top_layout.addWidget(self.stock_symbol_dropdown)
+        top_layout.addWidget(price_display_label)
+        top_layout.addWidget(self.bid_price)
+        top_layout.addWidget(self.ask_price)
+        top_layout.addWidget(self.last_traded_price)
+        top_layout.addWidget(order_type_label)
+        top_layout.addWidget(self.order_type_dropdown)
+        top_layout.addWidget(self.limit_price_container)
+        top_layout.addWidget(quantity_label)
+        top_layout.addWidget(self.quantity)
+        top_layout.addWidget(self.buy_button)
+        top_layout.addWidget(self.sell_button)
+        top_layout.addLayout(bracket_label_button_layout)
+        top_layout.addWidget(self.bracket_order_container)
+        top_layout.addWidget(self.submit_button)
+        top_layout.addWidget(self.estimated_cost)
+
+        top_container = QWidget()
+        top_container.setLayout(top_layout)
+
         layout = QVBoxLayout()
-        layout.addWidget(widget_label)
-        layout.addWidget(self.stock_symbol_dropdown)
-        layout.addWidget(price_display_label)
-        layout.addWidget(self.bid_price)
-        layout.addWidget(self.ask_price)
-        layout.addWidget(self.last_traded_price)
-        layout.addWidget(order_type_label)
-        layout.addWidget(self.order_type_dropdown)
-        layout.addWidget(self.limit_price_container)
-        layout.addWidget(quantity_label)
-        layout.addWidget(self.quantity)
-        layout.addWidget(self.buy_button)
-        layout.addWidget(self.sell_button)
-        layout.addLayout(bracket_label_button_layout)
-        layout.addWidget(self.bracket_order_container)
-        layout.addWidget(self.submit_button)
-        layout.addWidget(self.estimated_cost)
+        layout.addWidget(top_container, stretch=3)
+        layout.addWidget(self.order_preview_box, stretch=1)
 
         self.setLayout(layout)
 
@@ -185,8 +225,10 @@ class OrderEntryWidget(QWidget):
     def check_order_type(self):
         if self.order_type_dropdown.currentText() == "LMT":
             self.limit_price_container.show()
+            self.preview_order_type.setText("Order Type: LMT")
         else:
             self.limit_price_container.hide()
+            self.preview_order_type.setText("Order Type: MKT")
 
     # checks to make sure all user input are valid before running get_estimated_cost
     def handle_limit_price_change(self):
@@ -197,6 +239,7 @@ class OrderEntryWidget(QWidget):
 
     # checks to make sure all user input are valid before running get_estimated_cost
     def handle_quantity_change(self):
+        self.preview_quantity.setText(f"Quantity: {self.quantity.text()}")
         if self.buy_sell_group.checkedButton() and self.quantity.text().isdigit():
             self.get_estimated_cost()
         else:
@@ -205,22 +248,30 @@ class OrderEntryWidget(QWidget):
     def get_estimated_cost(self):
         if self.order_type_dropdown.currentText() == "MKT":
             if self.buy_sell_group.checkedButton().text() == "BUY":
-                buy_cost = self.app.ask_price * int(self.quantity.text())
-                self.estimated_cost.setText(f"This order will cost around ${buy_cost} USD")
+                buy_cost = round(self.app.market_data.ask * int(self.quantity.text()), 2)
+
+                self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.ask}")
+                self.preview_total_value.setText(f"Total Buy Cost: ${buy_cost}")
 
             elif self.buy_sell_group.checkedButton().text() == "SELL":
-                sell_price = round(self.app.bid_price * int(self.quantity.text()), 2)
-                self.estimated_cost.setText(f"This order will sell at around ${sell_price} USD")
+                sell_price = round(self.app.market_data.bid * int(self.quantity.text()), 2)
+
+                self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.bid}")
+                self.preview_total_value.setText(f"Total Sell Value: ${sell_price}")
 
         if self.order_type_dropdown.currentText() == "LMT":
 
             if self.buy_sell_group.checkedButton().text() == "BUY":
                 buy_cost = float(self.limit_price.text()) * int(self.quantity.text())
-                self.estimated_cost.setText(f"If this order is triggered, it will cost around ${buy_cost} USD")
+
+                self.preview_individual_price.setText(f"Individual Price: ${self.limit_price.text()}")
+                self.preview_total_value.setText(f"Total Buy Cost if Triggered: ${buy_cost}")
 
             elif self.buy_sell_group.checkedButton().text() == "SELL":
                 sell_price = float(self.limit_price.text()) * int(self.quantity.text())
-                self.estimated_cost.setText(f"If this order is triggered, it will sell at around ${sell_price} USD")
+
+                self.preview_individual_price.setText(f"Individual Price: ${self.limit_price.text()}")
+                self.preview_total_value.setText(f"Total Sell Value if Triggered: ${sell_price}")
 
         self.estimated_cost.show()
 
@@ -262,7 +313,9 @@ class OrderEntryWidget(QWidget):
         print("Order successfully submitted!")
 
     def handle_symbol_change_signal(self):
-        self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)
+        symbol = self.app.current_symbol
+        self.stock_symbol_dropdown.setCurrentText(symbol)
+        self.preview_symbol.setText(f"Symbol: {symbol}")
 
     def show_bracket_inputs(self):
 
@@ -280,6 +333,12 @@ class OrderEntryWidget(QWidget):
     def attach_bracket(self):
 
         self.is_bracket_order = True
+
+        self.preview_brackets_label.setText("Brackets:")
+        self.preview_brackets.show()
+        self.preview_brackets.addItem(f"Profit Taker: ${self.profit_taker_input.text()}")
+        self.preview_brackets.addItem(f"Stop Loss: ${self.stop_loss_input.text()}")
+
         print('Bracket attached!')
 
     def remove_bracket(self):
@@ -288,6 +347,10 @@ class OrderEntryWidget(QWidget):
         self.profit_taker_input.clear()
         self.stop_loss_input.clear()
 
+        self.preview_brackets_label.setText("Brackets: None")
+        self.preview_brackets.hide()
+        self.preview_brackets.clear()
+
         print('Bracket removed!')
 
     # sets bracket order dropdown with values ranging from 10-100% of the stock's price
@@ -295,67 +358,85 @@ class OrderEntryWidget(QWidget):
         button_pressed = self.sender()
 
         if button_pressed.text() == "BUY":
+            self.preview_action.setText("Action: BUY")
+
             price_text = self.ask_price.text()
             _, _, price = price_text.partition("$")
 
             self.profit_taker_dropdown.clear()
             self.stop_loss_dropdown.clear()
 
+            self.profit_taker_dropdown.addItem("---")
+            self.stop_loss_dropdown.addItem("---")
+
             for i in range(1, 11):
-                increment = float(price) * (i * 0.10)
                 formatted_price = f"{round(i * 0.10 * 100)}%"
-                self.profit_taker_dropdown.addItem(formatted_price)
-                self.stop_loss_dropdown.addItem(formatted_price)
+                self.profit_taker_dropdown.addItem(f"ASK + {formatted_price}")
+                self.stop_loss_dropdown.addItem(f"ASK - {formatted_price}")
 
         if button_pressed.text() == "SELL":
+            self.preview_action.setText("Action: SELL")
+
             price_text = self.ask_price.text()
             _, _, price = price_text.partition("$")
 
             self.profit_taker_dropdown.clear()
             self.stop_loss_dropdown.clear()
 
+            self.profit_taker_dropdown.addItem("---")
+            self.stop_loss_dropdown.addItem("---")
+
             for i in range(1, 11):
-                increment = float(price) * (i * 0.10)
                 formatted_price = f"{round(i * 0.10 * 100)}%"
-                self.profit_taker_dropdown.addItem(formatted_price)
-                self.stop_loss_dropdown.addItem(formatted_price)
+                self.profit_taker_dropdown.addItem(f"BID + {formatted_price}")
+                self.stop_loss_dropdown.addItem(f"BID - {formatted_price}")
 
     # sets profit taker input to what was selected from dropdown
     def set_profit_taker_from_dropdown(self):
-        dropdown_text = self.profit_taker_dropdown.currentText()
-        percentage, _, _ = dropdown_text.partition('%')
+        if self.profit_taker_dropdown.currentText() != "---":
+            dropdown_text = self.profit_taker_dropdown.currentText()
+            percentage = re.search(r'(\d+)%', dropdown_text)
+            percentage = percentage.group(1)
 
-        checked_button = self.buy_sell_group.checkedButton()
-        input_text = ''
-        if checked_button is not None:
-            if checked_button.text() == "BUY":
-                price_text = self.ask_price.text()
-                _, _, price = price_text.partition("$")
-                input_text = input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+            checked_button = self.buy_sell_group.checkedButton()
+            input_text = ''
+            if checked_button is not None:
+                if checked_button.text() == "BUY":
+                    price_text = self.ask_price.text()
+                    _, _, price = price_text.partition("$")
+                    input_text = round(float(price) + round((float(percentage) / 100) * float(price), 2), 2)
 
-            if checked_button.text() == "SELL":
-                price_text = self.bid_price.text()
-                _, _, price = price_text.partition("$")
-                input_text = input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+                if checked_button.text() == "SELL":
+                    price_text = self.bid_price.text()
+                    _, _, price = price_text.partition("$")
+                    input_text = round(float(price) + round((float(percentage) / 100) * float(price), 2), 2)
+
+        else:
+            input_text = ""
 
         self.profit_taker_input.setText(str(input_text))
 
     # sets stop loss input to what was selected from dropdown
     def set_stop_loss_from_dropdown(self):
-        dropdown_text = self.stop_loss_dropdown.currentText()
-        percentage, _, _ = dropdown_text.partition('%')
+        if self.stop_loss_dropdown.currentText() != "---":
+            dropdown_text = self.stop_loss_dropdown.currentText()
+            percentage = re.search(r'(\d+)%', dropdown_text)
+            percentage = percentage.group(1)
 
-        checked_button = self.buy_sell_group.checkedButton()
-        input_text = ''
-        if checked_button is not None:
-            if checked_button.text() == "BUY":
-                price_text = self.ask_price.text()
-                _, _, price = price_text.partition("$")
-                input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+            checked_button = self.buy_sell_group.checkedButton()
+            input_text = ''
+            if checked_button is not None:
+                if checked_button.text() == "BUY":
+                    price_text = self.ask_price.text()
+                    _, _, price = price_text.partition("$")
+                    input_text = round(float(price) - round((float(percentage) / 100) * float(price), 2), 2)
 
-            if checked_button.text() == "SELL":
-                price_text = self.bid_price.text()
-                _, _, price = price_text.partition("$")
-                input_text = round(round((float(percentage) / 100) * float(price), 2) + float(price), 2)
+                if checked_button.text() == "SELL":
+                    price_text = self.bid_price.text()
+                    _, _, price = price_text.partition("$")
+                    input_text = round(float(price) - round((float(percentage) / 100) * float(price), 2), 2)
+
+        else:
+            input_text = ""
 
         self.stop_loss_input.setText(str(input_text))
