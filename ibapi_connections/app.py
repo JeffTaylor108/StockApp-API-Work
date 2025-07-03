@@ -316,6 +316,9 @@ class StockApp(EWrapper, EClient, QObject):
     def cancelMktData(self, reqId):
         print(f"Market data for request {reqId} cancelled successfully")
 
+    def tickSnapshotEnd(self, reqId):
+        print(f"Tick Snapshot Finished. Req Id: {reqId}")
+
     #--------------------------------News Endpoint--------------------------------------------------------------------
 
     # defines response for reqNewsProviders, which returns an array of news providers
@@ -435,7 +438,10 @@ class StockApp(EWrapper, EClient, QObject):
 
     # receives the subscription and details of requested scanner
     def scannerData(self, reqId, rank, contractDetails, distance, benchmark, projection, legsStr):
-        self.open_scanner_ids.append(reqId)
+        if reqId not in self.open_scanner_ids:
+            self.open_scanner_ids.append(reqId)
+            print("Open scanner ids: ", self.open_scanner_ids)
+
         self.active_scanners_updated.emit(ScanData(contractDetails.contract, rank), reqId)
         print("ScannerData. ReqId:", reqId,
               ScanData(contractDetails.contract, rank, distance, benchmark, projection, legsStr))

@@ -11,7 +11,7 @@ from ibapi_connections.market_data import get_scanner_mkt_data
 from ibapi_connections.market_scanner import req_scanner_subscription, req_saved_scanner_subscription, \
     cancel_subscription
 from mongodb_connection.IBKR_market_scanners import mongo_fetch_scanners, mongo_remove_market_scanner, \
-    mongo_fetch_scanner_name, mongo_fetch_scanner_tags
+    mongo_fetch_scanner_name, mongo_fetch_scanner_tags, mongo_fetch_matching_scanner
 
 
 class MarketScannerWidget(QWidget):
@@ -318,3 +318,4 @@ class MarketScannerWidget(QWidget):
         cancel_subscription(self.app, req_id)
         mongo_remove_market_scanner(self.app.client, req_id)
         print(f"Closing tab and connection for Mkt Scanner with id {req_id}")
+

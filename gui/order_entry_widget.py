@@ -85,13 +85,10 @@ class OrderEntryWidget(QWidget):
 
         # bracket order button
         bracket_order_label = QLabel("Attach a bracket to order?")
-        self.bracket_order_button = QPushButton()
-        self.bracket_order_button.clicked.connect(self.show_bracket_inputs)
 
         # horizontal layout for bracket label/button
         bracket_label_button_layout = QHBoxLayout()
         bracket_label_button_layout.addWidget(bracket_order_label)
-        bracket_label_button_layout.addWidget(self.bracket_order_button)
 
         # bracket order inputs
         profit_taker_label = QLabel("Profit Taker:")
@@ -126,7 +123,6 @@ class OrderEntryWidget(QWidget):
 
         self.bracket_order_container = QWidget()
         self.bracket_order_container.setLayout(bracket_order_layout)
-        self.bracket_order_container.hide()
 
         # order preview box
         self.order_preview_box = QGroupBox("Order Preview")
@@ -198,12 +194,7 @@ class OrderEntryWidget(QWidget):
         # fonts/styling
         widget_label.setFont(styling.heading_font)
         price_display_label.setFont(styling.heading_font)
-
-        self.forward_arrow_icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
-        self.down_arrow_icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown)
-        self.bracket_order_button.setIcon(self.forward_arrow_icon)
-        self.bracket_order_button.setStyleSheet(styling.transparent_button_style)
-        self.bracket_order_shown = False
+        bracket_order_label.setFont(styling.heading_font)
 
 
     def get_stock_selected(self):
@@ -316,19 +307,6 @@ class OrderEntryWidget(QWidget):
         symbol = self.app.current_symbol
         self.stock_symbol_dropdown.setCurrentText(symbol)
         self.preview_symbol.setText(f"Symbol: {symbol}")
-
-    def show_bracket_inputs(self):
-
-        # checks if bracket order inputs are shown or not
-        if not self.bracket_order_shown:
-            self.bracket_order_container.show()
-            self.bracket_order_button.setIcon(self.down_arrow_icon)
-            self.bracket_order_shown = True
-
-        elif self.bracket_order_shown:
-            self.bracket_order_container.hide()
-            self.bracket_order_button.setIcon(self.forward_arrow_icon)
-            self.bracket_order_shown = False
 
     def attach_bracket(self):
 

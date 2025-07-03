@@ -29,6 +29,13 @@ def mongo_fetch_scanners(client):
     market_scanners = market_scanner_collection.find({})
     return market_scanners
 
+# retrieves market scanner matching req_id
+def mongo_fetch_matching_scanner(client, req_id):
+    market_scanner_collection = client.IBKR_DB.market_scanners
+
+    market_scanner = market_scanner_collection.find_one({"req_id": req_id})
+    return market_scanner
+
 # updates req id of scanner
 def update_req_id(client, req_id, object_id:ObjectId):
     market_scanner_collection = client.IBKR_DB.market_scanners

@@ -32,14 +32,29 @@ def stop_mkt_data_stream(app, reqId):
     print("Market data stream closed.")
 
 # gets historical bar data of contract
-def get_market_data_graph(app, contract, interval):
+def get_market_data_graph(app, contract, period, interval):
 
     app.market_data_bars = []
     app.find_market_data_bars_event.clear()
 
     app.reqMarketDataType(3)
     print("Contract: ", contract)
-    app.reqHistoricalData(app.getNextReqId(), contract, "", "1 W", interval, "TRADES", 1, 1, True, [])
+
+    period_num, _, period_unit = period.partition(' ')
+    period_unit = period_unit[0]
+
+    # converts hour/minute values into seconds for TWS processing
+    if period_unit == 'H':
+        hour_to_seconds = int(period_num) * 3600
+        period_value = f'{hour_to_seconds} S'
+    elif period_unit == 'M':
+        minute_to_seconds = int(period_num) * 60
+        period_value = f'{minute_to_seconds} S'
+    else:
+        period_value = f'{period_num} {period_unit}'
+
+
+    app.reqHistoricalData(app.getNextReqId(), contract, "", period_value, interval, "TRADES", 1, 1, True, [])
 
     if app.find_market_data_bars_event.wait(timeout=5):
         return app.market_data_bars
