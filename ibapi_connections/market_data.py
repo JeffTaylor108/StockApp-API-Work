@@ -29,7 +29,7 @@ def get_live_prices_and_volume(app, contract):
 # ends market data stream
 def stop_mkt_data_stream(app, reqId):
     app.cancelMktData(reqId)
-    print("Market data stream closed.")
+    print(f"Market data stream closed for req id {reqId}.")
 
 # gets historical bar data of contract
 def get_market_data_graph(app, contract, period, interval):

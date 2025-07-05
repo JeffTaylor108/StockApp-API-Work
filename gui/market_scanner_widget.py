@@ -1,5 +1,7 @@
+import time
 import xml.etree.ElementTree as ET
 
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QGroupBox, QListWidget, \
     QListWidgetItem, QHBoxLayout, QTableWidget, QTabWidget, QTableWidgetItem
 from PyQt6.QtGui import QColor, QBrush
@@ -7,7 +9,7 @@ from ibapi.scanner import ScannerSubscription
 from ibapi.tag_value import TagValue
 
 from gui import styling
-from ibapi_connections.market_data import get_scanner_mkt_data
+from ibapi_connections.market_data import get_scanner_mkt_data, stop_mkt_data_stream
 from ibapi_connections.market_scanner import req_scanner_subscription, req_saved_scanner_subscription, \
     cancel_subscription
 from mongodb_connection.IBKR_market_scanners import mongo_fetch_scanners, mongo_remove_market_scanner, \
@@ -36,6 +38,7 @@ class MarketScannerWidget(QWidget):
         self.scanner_tabs = QTabWidget()
         self.scanner_tabs.setTabsClosable(True)
         self.scanner_tabs.tabCloseRequested.connect(self.close_tab)
+        self.scanner_tabs.currentChanged.connect(self.handle_tab_switch)
 
         # selects scanner code category
         scan_code_label = QLabel("1. Select Scanner Category")
@@ -113,6 +116,7 @@ class MarketScannerWidget(QWidget):
         self.find_valid_tag_categories()
 
         self.initialize_saved_scanners()
+        self.pause_tabs_not_in_focus()
 
     # gets scanner parameters and sends subscription request to TWS
     def create_scanner(self):
@@ -129,6 +133,10 @@ class MarketScannerWidget(QWidget):
         print(f'Filter Tags: {self.filter_tags}')
 
         req_scanner_subscription(self.app, scanner, self.filter_tags, display_name)
+
+        # clears inputs/previews
+        self.tag_value_input.clear()
+        self.preview_tags_list.clear()
 
     # updates scanner tables with new scanner rankings
     def update_scanner_table(self, scan_data_obj, req_id):
@@ -303,13 +311,15 @@ class MarketScannerWidget(QWidget):
             scanner_details_obj.locationCode = scanner["scanner_details"]["locationCode"]
             scanner_details_obj.scanCode = scanner["scanner_details"]["scanCode"]
 
+            req_id = scanner["req_id"]
+
             tag_values = []
             for tag in scanner["tags"]:
                 tag_name = tag["tag"]
                 value = tag["value"]
                 tag_values.append(TagValue(tag_name, value))
 
-            req_saved_scanner_subscription(self.app, scanner_details_obj, tag_values, scanner["_id"])
+            req_saved_scanner_subscription(self.app, scanner_details_obj, tag_values, req_id)
 
     # handles scanner tab close event, deleting from QTab widget, mongodb, and cancelling scanner subscription
     def close_tab(self, index):
@@ -319,3 +329,49 @@ class MarketScannerWidget(QWidget):
         mongo_remove_market_scanner(self.app.client, req_id)
         print(f"Closing tab and connection for Mkt Scanner with id {req_id}")
 
+    # handles closing subscriptions for tabs not in focus to manage data limitations
+    def pause_tabs_not_in_focus(self):
+        if self.scanner_tabs.count() > 1:
+            index = 1
+            while index < self.scanner_tabs.count():
+                req_id = self.scanner_tabs.tabBar().tabData(index)
+                cancel_subscription(self.app, req_id)
+                index += 1
+                print(f"Canceled scanner id {req_id} subscription on open")
+
+    # handles switching between which tab is open and opening/closing scanner subscriptions accordingly
+    def handle_tab_switch(self, index):
+
+        # req_id for the new tab
+        new_tab_req_id = self.scanner_tabs.tabBar().tabData(index)
+        if new_tab_req_id == self.current_table_req_id:
+            return
+
+        # closes subscription for previous tab
+        if self.current_table_req_id is not None:
+            cancel_subscription(self.app, self.current_table_req_id)
+            stop_mkt_data_stream(self.app, self.current_table_req_id)
+            print(f"Closed subscription for scanner {self.current_table_req_id}")
+
+        self.current_table_req_id = new_tab_req_id
+
+        # reopen subscription for new tab
+        scanner_data = mongo_fetch_matching_scanner(self.app.client, new_tab_req_id)
+
+        # reconstructs scanner obj
+        scanner_details_obj = ScannerSubscription()
+        scanner_details_obj.instrument = scanner_data["scanner_details"]["instrument"]
+        scanner_details_obj.locationCode = scanner_data["scanner_details"]["locationCode"]
+        scanner_details_obj.scanCode = scanner_data["scanner_details"]["scanCode"]
+
+        tag_values = []
+        for tag in scanner_data["tags"]:
+            tag_name = tag["tag"]
+            value = tag["value"]
+            tag_values.append(TagValue(tag_name, value))
+
+        # reopen scanner subscription
+        req_saved_scanner_subscription(self.app, scanner_details_obj, tag_values, new_tab_req_id)
+        print(f"Reopened subscription for scanner {new_tab_req_id}")
+
+        print(f"Switched to tab {index} with req_id {new_tab_req_id}")

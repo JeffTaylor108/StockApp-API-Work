@@ -69,7 +69,7 @@ class StockDataWidget(QWidget):
         print(f"STOCK DATA FOR {self.stock_symbol_selected}: {stock_data}")
         self.previous_stock_req_id = stock_data.req_id
 
-        self.price.setText(f"${stock_data.last}")
+        self.price.setText(f"Last Price: ${stock_data.last}")
 
         # handles if market never opened that day
         if stock_data.open == 0.0:

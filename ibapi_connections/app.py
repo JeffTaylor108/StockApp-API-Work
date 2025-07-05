@@ -446,6 +446,9 @@ class StockApp(EWrapper, EClient, QObject):
         print("ScannerData. ReqId:", reqId,
               ScanData(contractDetails.contract, rank, distance, benchmark, projection, legsStr))
 
+    def scannerDataEnd(self, reqId):
+        print(f"Scanner {reqId} cancelled")
+
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
 
     # helper method for tickPrice and tickSize event threading

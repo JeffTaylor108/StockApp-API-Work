@@ -209,8 +209,16 @@ class OrderEntryWidget(QWidget):
         get_live_prices_and_volume(self.app, contract)
 
     def update_prices(self):
-        self.bid_price.setText(f"Bid Price: ${self.app.market_data.bid}")
-        self.ask_price.setText(f"Ask Price: ${self.app.market_data.ask}")
+        if self.app.market_data.bid == -1:
+            self.bid_price.setText(f'Bid Price: <span style="color: gray;">Market Closed</span>')
+        else:
+            self.bid_price.setText(f"Bid Price: ${self.app.market_data.bid}")
+
+        if self.app.market_data.ask == -1:
+            self.ask_price.setText(f'Ask Price: <span style="color: gray;">Market Closed</span>')
+        else:
+            self.ask_price.setText(f"Ask Price: ${self.app.market_data.ask}")
+
         self.last_traded_price.setText(f"Last Traded Price: ${self.app.market_data.last}")
 
     def check_order_type(self):
@@ -239,16 +247,32 @@ class OrderEntryWidget(QWidget):
     def get_estimated_cost(self):
         if self.order_type_dropdown.currentText() == "MKT":
             if self.buy_sell_group.checkedButton().text() == "BUY":
-                buy_cost = round(self.app.market_data.ask * int(self.quantity.text()), 2)
 
-                self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.ask}")
-                self.preview_total_value.setText(f"Total Buy Cost: ${buy_cost}")
+                # uses last price if market closed
+                if self.app.market_data.ask != 0:
+                    buy_cost = round(self.app.market_data.ask * int(self.quantity.text()), 2)
+
+                    self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.ask}")
+                    self.preview_total_value.setText(f"Total Buy Cost: ${buy_cost}")
+                else:
+                    buy_cost = round(self.app.market_data.last * int(self.quantity.text()), 2)
+
+                    self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.last}")
+                    self.preview_total_value.setText(f"Total Buy Cost: ${buy_cost}")
 
             elif self.buy_sell_group.checkedButton().text() == "SELL":
-                sell_price = round(self.app.market_data.bid * int(self.quantity.text()), 2)
 
-                self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.bid}")
-                self.preview_total_value.setText(f"Total Sell Value: ${sell_price}")
+                # uses last price if market closed
+                if self.app.market_data.bid != 0:
+                    sell_price = round(self.app.market_data.bid * int(self.quantity.text()), 2)
+
+                    self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.bid}")
+                    self.preview_total_value.setText(f"Total Sell Value: ${sell_price}")
+                else:
+                    sell_price = round(self.app.market_data.last * int(self.quantity.text()), 2)
+
+                    self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.last}")
+                    self.preview_total_value.setText(f"Total Sell Value: ${sell_price}")
 
         if self.order_type_dropdown.currentText() == "LMT":
 
@@ -381,6 +405,11 @@ class OrderEntryWidget(QWidget):
             if checked_button is not None:
                 if checked_button.text() == "BUY":
                     price_text = self.ask_price.text()
+
+                    # checks if ask price is unavailable
+                    if price_text.contains('Market Closed'):
+                        price_text = self.last_traded_price.text()
+
                     _, _, price = price_text.partition("$")
                     input_text = round(float(price) + round((float(percentage) / 100) * float(price), 2), 2)
 
@@ -406,6 +435,11 @@ class OrderEntryWidget(QWidget):
             if checked_button is not None:
                 if checked_button.text() == "BUY":
                     price_text = self.ask_price.text()
+
+                    # checks if ask price is unavailable
+                    if price_text.contains('Market Closed'):
+                        price_text = self.last_traded_price.text()
+
                     _, _, price = price_text.partition("$")
                     input_text = round(float(price) - round((float(percentage) / 100) * float(price), 2), 2)
 
