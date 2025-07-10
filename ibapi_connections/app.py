@@ -33,6 +33,8 @@ class StockApp(EWrapper, EClient, QObject):
     scanner_price_updated = pyqtSignal(str, float, int)
     scanner_volume_updated = pyqtSignal(str, int, int)
     scanner_price_change_updated = pyqtSignal(str, dict, int)
+    historical_news_received = pyqtSignal(object)
+    article_text_received = pyqtSignal(str)
 
     def __init__(self):
         EClient.__init__(self, self)
@@ -350,22 +352,24 @@ class StockApp(EWrapper, EClient, QObject):
 
     # defines response for reqHistoricalNews
     def historicalNews(self, reqId, time, providerCode, articleId, headline):
-        # print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
+        print(f"Historical news: reqId: {reqId}, time: {time}, providerCode: {providerCode}, articleId: {articleId}, headline: {headline}")
 
         article_obj = NewsArticle(
             date = time,
+            provider_code = providerCode,
             headline = headline,
             article_id = articleId
         )
-        self.articles_found.append(article_obj)
-        self.find_articles_event.set()
+
+        self.historical_news_received.emit(article_obj)
 
     def historicalDataEnd(self, reqId, hasMore):
+        self.find_articles_event.set()
         print("All historical news displayed for: ", reqId, "More data to display:", hasMore)
 
     # defines response for reqNewsArticle (note: article text returns html as a single line)
     def newsArticle(self, reqId, articleType, articleText):
-        self.selected_article_text = articleText
+        self.article_text_received.emit(articleText)
         self.find_article_text_event.set()
         print(f"News Article: reqId: {reqId}, articleType: {articleType}, article text: {articleText}")
 
@@ -511,6 +515,7 @@ class StockApp(EWrapper, EClient, QObject):
 @dataclass
 class NewsArticle:
     date: str
+    provider_code: str
     headline: str
     article_id: str
 

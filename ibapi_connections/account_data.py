@@ -51,6 +51,6 @@ def get_position_symbols(app):
     else:
         print("Timeout while finding positions")
 
-    print(position_symbols)
+    print('Position symbols:', position_symbols)
 
     return position_symbols

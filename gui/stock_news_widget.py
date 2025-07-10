@@ -39,11 +39,13 @@ class StockNewsWidget(QWidget):
         # portfolio_dict news button
         portfolio_news_button = QPushButton("View Portfolio News")
         portfolio_news_button.clicked.connect(self.get_portfolio_news)
+        self.app.historical_news_received.connect(self.update_news_list)
 
         # stock news display
         self.news_display_label = QLabel("News Based on Portfolio:")
         self.news_display = QListWidget()
         self.news_display.itemDoubleClicked.connect(self.on_headline_clicked)
+        self.app.article_text_received.connect(self.on_article_text_received)
 
         # layout
         layout = QVBoxLayout()
@@ -64,25 +66,19 @@ class StockNewsWidget(QWidget):
     def get_stock_news(self):
         symbol = self.symbol_search.text()
         contract:Contract = req_contract_from_symbol(self.app, symbol)
-        headlines = get_news_headlines(self.app, contract)
-
         self.news_display.clear()
         self.news_display_label.setText("News Based on Symbol Search:")
-        for article in headlines:
 
-            cleaned_headline = re.sub(r"^\{.*?\}", "", article.headline).strip()
-            cleaned_date = article.date[:10]
-
-            # allows for me to store both text and article object inside each item
-            item = QListWidgetItem(f"{cleaned_date}: {cleaned_headline}")
-            item.setData(Qt.ItemDataRole.UserRole, article)
-            self.news_display.addItem(item)
+        get_news_headlines(self.app, contract)
 
     def on_headline_clicked(self, headline):
         article_id = headline.data(Qt.ItemDataRole.UserRole).article_id
+        provider_code = headline.data(Qt.ItemDataRole.UserRole).provider_code
         print("article id: " + article_id)
-        article_text = get_news_article_from_id(self.app, article_id)
+        print("provider code: " + provider_code)
+        get_news_article_from_id(self.app, article_id, provider_code)
 
+    def on_article_text_received(self, article_text):
         print("from headline click:" + article_text)
 
         dialog = ArticleDialog(article_text)
@@ -93,19 +89,21 @@ class StockNewsWidget(QWidget):
         account_portfolio = get_position_symbols(self.app)
         self.news_display.clear()
 
+        print(account_portfolio)
+
         for symbol in account_portfolio:
+            print(f'Finding articles for symbol: {symbol}')
             contract: Contract = req_contract_from_symbol(self.app, symbol)
-            headlines = get_news_headlines(self.app, contract)
+            get_news_headlines(self.app, contract)
 
-            for article in headlines:
-                cleaned_headline = re.sub(r"^\{.*?\}", "", article.headline).strip()
-                cleaned_date = article.date[:10]
+    def update_news_list(self, article_obj):
+        cleaned_headline = re.sub(r"^\{.*?\}", "", article_obj.headline).strip()
+        cleaned_date = article_obj.date[:10]
 
-                # allows for me to store both text and article object inside each item
-                item = QListWidgetItem(f"{cleaned_date}: {cleaned_headline}")
-                item.setData(Qt.ItemDataRole.UserRole, article)
-                self.news_display.addItem(item)
-
+        # allows for me to store both text and article object inside each item
+        item = QListWidgetItem(f"{cleaned_date}: {cleaned_headline}")
+        item.setData(Qt.ItemDataRole.UserRole, article_obj)
+        self.news_display.addItem(item)
 
 
 class ArticleDialog(QDialog):
