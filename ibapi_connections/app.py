@@ -50,6 +50,7 @@ class StockApp(EWrapper, EClient, QObject):
 
         # currently selected stock
         self.current_symbol = 'AAPL'
+        self.prev_symbol_req_id = None
 
         # variables for stock data
         self.market_data = MarketData(
@@ -259,6 +260,14 @@ class StockApp(EWrapper, EClient, QObject):
                 self.scanner_price_change[symbol] = {"last_price": None, "open_price": None}
 
         else:
+            # only processes if req id is for current request
+            if self.market_data.req_id is not None and reqId != self.market_data.req_id:
+                print(f"Ignoring tick for old request {reqId}, current request is {self.market_data.req_id}")
+                return
+
+            if self.market_data.req_id is None:
+                self.market_data.req_id = reqId
+
             if tickType == 66:
                 self.market_data.bid = price
                 print(f"Bid price: {price}")
@@ -304,6 +313,14 @@ class StockApp(EWrapper, EClient, QObject):
                 print(f"Scanner volume for {symbol}: {size}")
 
         else:
+            # only processes if req id is for current request
+            if self.market_data.req_id is not None and reqId != self.market_data.req_id:
+                print(f"Ignoring tick for old request {reqId}, current request is {self.market_data.req_id}")
+                return
+
+            if self.market_data.req_id is None:
+                self.market_data.req_id = reqId
+
             if tickType == 74:
                 self.market_data.volume = size
                 print(f"Trading volume for day: {size}")
@@ -453,6 +470,10 @@ class StockApp(EWrapper, EClient, QObject):
 
     # helper method for tickPrice and tickSize event threading
     def check_and_emit_complete_data(self):
+
+        if self.market_data.req_id is None:
+            return
+
         data_dict = asdict(self.market_data)
 
         all_filled = all(
@@ -470,6 +491,20 @@ class StockApp(EWrapper, EClient, QObject):
         if self.current_symbol != new_symbol:
             self.current_symbol = new_symbol
             self.stock_symbol_changed.emit()
+
+    # helper method that clears market data of previous symbol
+    def clear_market_data_on_symbol_switch(self):
+        self.market_data = MarketData(
+            req_id=None,
+            bid=None,
+            ask=None,
+            last=None,
+            high=None,
+            low=None,
+            open=None,
+            close=None,
+            volume=None
+        )
 
 
 # data objects

@@ -10,6 +10,10 @@ def market_data_testing(app, contract):
 
 # gets live bid, ask, and last traded prices of contract
 def get_live_prices_and_volume(app, contract):
+
+    if app.prev_symbol_req_id is not None:
+        stop_mkt_data_stream(app, app.prev_symbol_req_id)
+
     app.reqMarketDataType(3)
 
     req_id = app.getNextReqId()
@@ -18,8 +22,12 @@ def get_live_prices_and_volume(app, contract):
     event = threading.Event()
     app.id_to_event[req_id] = event
 
+    app.clear_market_data_on_symbol_switch()
+    app.market_data.req_id = req_id
+
     app.reqMktData(req_id, contract, "", False, False, [])
-    if event.wait(timeout=5):
+    if event.wait(timeout=10):
+        app.prev_symbol_req_id = req_id # req id for canceling request when symbol changes
         print(app.market_data)
         return None
     else:
@@ -28,8 +36,11 @@ def get_live_prices_and_volume(app, contract):
 
 # ends market data stream
 def stop_mkt_data_stream(app, reqId):
-    app.cancelMktData(reqId)
-    print(f"Market data stream closed for req id {reqId}.")
+    if reqId is not None:
+        app.cancelMktData(reqId)
+        if reqId in app.id_to_event:
+            del app.id_to_event[reqId]
+        print(f"Market data stream closed for req id {reqId}.")
 
 # gets historical bar data of contract
 def get_market_data_graph(app, contract, period, interval):

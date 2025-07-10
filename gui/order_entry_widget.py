@@ -331,6 +331,7 @@ class OrderEntryWidget(QWidget):
         symbol = self.app.current_symbol
         self.stock_symbol_dropdown.setCurrentText(symbol)
         self.preview_symbol.setText(f"Symbol: {symbol}")
+        self.get_stock_selected()
 
     def attach_bracket(self):
 

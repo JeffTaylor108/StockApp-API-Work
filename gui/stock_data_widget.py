@@ -58,15 +58,16 @@ class StockDataWidget(QWidget):
         self.stock_symbol_selected = symbol
         self.app.check_current_symbol(symbol)  # handles universal symbol change
 
-        if self.previous_stock_req_id is not None:
-            stop_mkt_data_stream(self.app, self.previous_stock_req_id)
-
         contract = req_contract_from_symbol(self.app, symbol)
+        if contract is None:
+            print(f"Could not find contract for symbol {symbol}")
+            return
+
         get_live_prices_and_volume(self.app, contract)
 
     def update_data(self):
         stock_data = self.app.market_data
-        print(f"STOCK DATA FOR {self.stock_symbol_selected}: {stock_data}")
+        print(f"STOCK DATA FOR {self.app.current_symbol}: {stock_data}")
         self.previous_stock_req_id = stock_data.req_id
 
         self.price.setText(f"Last Price: ${stock_data.last}")
@@ -96,3 +97,4 @@ class StockDataWidget(QWidget):
 
     def handle_symbol_change_signal(self):
         self.stock_symbol_dropdown.setCurrentText(self.app.current_symbol)
+        self.get_stock_selected()
