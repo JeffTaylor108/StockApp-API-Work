@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QHBoxLayout, QSiz
 from mongodb_connection.mongo_client import initialize_mongo_client
 from schwab_gui.preview_order_history import PreviewOrderHistoryWidget
 from schwab_gui.price_history_graph_widget import SchwabPriceHistoryGraphWidget
+from schwab_gui.schwab_movers_widget import SchwabMoversWidget
 from schwab_gui.schwab_order_entry_widget import SchwabOrderEntryWidget
 from schwab_gui.schwab_stock_data_widget import SchwabStockDataWidget
 from gui.trade_app_selection import TradeAppSelectionWidget
@@ -26,6 +27,7 @@ class MainSchwabWindow(QMainWindow):
         order_entry_widget = SchwabOrderEntryWidget(self.mongo_client)
         preview_order_history = PreviewOrderHistoryWidget(self.mongo_client)
         price_history_graph = SchwabPriceHistoryGraphWidget(self.mongo_client)
+        top_movers_widget = SchwabMoversWidget(self.mongo_client)
 
         # widget sizing
         stock_data_widget.setMinimumSize(300, 270)
@@ -50,6 +52,7 @@ class MainSchwabWindow(QMainWindow):
 
         horizontal_layout.addLayout(layout)
         horizontal_layout.addWidget(price_history_graph)
+        horizontal_layout.addWidget(top_movers_widget)
 
         layout_wrapper = QVBoxLayout()
         layout_wrapper.addLayout(horizontal_layout, stretch=3)

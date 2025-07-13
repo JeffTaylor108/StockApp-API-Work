@@ -263,7 +263,7 @@ class MarketScannerWidget(QWidget):
 
     # fills tag_category_selector with valid tags and adds them to dictionary matching display names to code names
     def find_valid_tag_categories(self):
-        tree = ET.parse('ibapi_connections/scanner.xml')
+        tree = ET.parse('scanner.xml')
         root = tree.getroot()
 
         # filters that can be used with STK instruments
@@ -282,9 +282,15 @@ class MarketScannerWidget(QWidget):
                 code = scan_type.find("AbstractField/code")
                 display_name = scan_type.find("AbstractField/displayName")
                 if code is not None and code.text and display_name is not None and display_name.text:
-                    self.tag_category_dict[display_name.text.strip()] = code.text.strip()
-                    self.tag_code_to_display_name[code.text.strip()] = display_name.text.strip()
-                    self.tag_category_selector.addItem(display_name.text.strip())
+                    display_name_text = display_name.text.strip()
+                    code_text = code.text.strip()
+
+                    # checks to prevent repeat tags from being added to dropdown
+                    if display_name_text not in self.tag_category_dict:
+                        self.tag_category_dict[display_name_text] = code_text
+                        self.tag_code_to_display_name[code_text] = display_name_text
+                        self.tag_category_selector.addItem(display_name_text)
+
         print(self.tag_category_dict)
 
     # handles preview category change

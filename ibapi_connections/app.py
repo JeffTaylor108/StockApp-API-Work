@@ -470,6 +470,25 @@ class StockApp(EWrapper, EClient, QObject):
     def scannerDataEnd(self, reqId):
         print(f"Scanner {reqId} cancelled")
 
+# -----------------------------------Market Depth Endpoint---------------------------------------------------------------
+
+# requires monthly subscription to function
+
+    # receives level 2 market data
+    def updateMktDepthL2(
+        self,
+        reqId: TickerId,
+        position: int,
+        marketMaker: str,
+        operation: int,
+        side: int,
+        price: float,
+        size: Decimal,
+        isSmartDepth: bool,
+    ):
+        print("UpdateMarketDepth. ReqId:", reqId, "Position:", position, "Operation:", operation, "Side:", side,
+              "Price:", floatMaxString(price), "Size:", decimalMaxString(size))
+
 # ------------------------------End of EWrapper/EClient definitions----------------------------------------------------
 
     # helper method for tickPrice and tickSize event threading

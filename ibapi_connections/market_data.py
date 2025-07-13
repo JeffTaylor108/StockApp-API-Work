@@ -97,3 +97,15 @@ def get_scanner_mkt_data(app, contract, scanner_req_id):
     app.scanner_contract_req_ids[req_id] = scanner_req_id
     app.scanner_contract_ids_to_symbol[req_id] = contract.symbol
     app.reqMktData(req_id, contract, "", True, False, [])
+
+
+# requests level 2 market data
+def get_level2_market_data(app, contract):
+
+    req_id = app.getNextReqId()
+
+    try:
+        print('requesting lvl2 market data for ', contract)
+        app.reqMktDepth(req_id, contract, 5, False, [])
+    except Exception as e:
+        print("ERROR FETCHING LVL2 DATA: ", e)

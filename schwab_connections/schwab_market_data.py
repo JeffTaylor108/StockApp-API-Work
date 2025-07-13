@@ -149,3 +149,18 @@ class SchwabMarketData(QObject):
                                       headers={'Authorization': f'Bearer {access_token}'})
         data = price_history.json()
         return data['candles']
+
+    # fetches top 10 movers
+    def fetch_movers(self, sort_value, frequency):
+        # validate access token before API call
+        validate_access_token()
+        with open('schwab_connections/tokens.json', 'r') as file:
+            token_data = json.load(file)
+
+        access_token = token_data['access_token']
+
+        top_10_movers = requests.get(f'{self.base_url}/movers/NASDAQ?sort={sort_value}&frequency={frequency}',
+                                     headers={'Authorization': f'Bearer {access_token}'})
+        data = top_10_movers.json()
+        print(data)
+        return data

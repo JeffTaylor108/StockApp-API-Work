@@ -4,7 +4,7 @@ from numpy.ma.core import append
 
 from gui import styling
 from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_prices_and_volume, stop_mkt_data_stream
+from ibapi_connections.market_data import get_live_prices_and_volume, stop_mkt_data_stream, get_level2_market_data
 
 
 class StockDataWidget(QWidget):

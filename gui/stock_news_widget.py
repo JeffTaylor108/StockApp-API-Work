@@ -97,7 +97,7 @@ class StockNewsWidget(QWidget):
             get_news_headlines(self.app, contract)
 
     def update_news_list(self, article_obj):
-        cleaned_headline = re.sub(r"^\{.*?\}", "", article_obj.headline).strip()
+        cleaned_headline = re.sub(r"^\{.*?\}!?", "", article_obj.headline).strip()
         cleaned_date = article_obj.date[:10]
 
         # allows for me to store both text and article object inside each item
