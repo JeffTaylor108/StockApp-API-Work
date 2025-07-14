@@ -162,5 +162,5 @@ class SchwabMarketData(QObject):
         top_10_movers = requests.get(f'{self.base_url}/movers/NASDAQ?sort={sort_value}&frequency={frequency}',
                                      headers={'Authorization': f'Bearer {access_token}'})
         data = top_10_movers.json()
-        print(data)
+        print('Top Movers:', data)
         return data
