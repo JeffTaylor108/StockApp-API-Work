@@ -18,7 +18,6 @@ def req_contract_from_symbol(app, symbol):
     app.reqMatchingSymbols(app.getNextReqId(), symbol)
 
     if app.find_matching_contract_event.wait(timeout=5):
-        app.matching_contract.exchange = 'NASDAQ' # sets exchange to NASDAQ, otherwise exchange is empty string
         return app.matching_contract
     else:
         print("Contract data not received")

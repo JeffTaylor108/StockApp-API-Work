@@ -180,8 +180,12 @@ class StockApp(EWrapper, EClient, QObject):
             if "NASDAQ" in description.contract.primaryExchange:
                 con = description.contract
                 break
+            elif "NYSE" in description.contract.primaryExchange:
+                con = description.contract
+                break
 
         if con:
+            con.exchange = con.primaryExchange
             self.matching_contract = con
             self.find_matching_contract_event.set()
         else:

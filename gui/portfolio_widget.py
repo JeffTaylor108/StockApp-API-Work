@@ -67,10 +67,10 @@ class PortfolioWidget(QWidget):
 
             self.portfolio_table.setItem(row_position, 0, QTableWidgetItem(position.contract.symbol))
             self.portfolio_table.setItem(row_position, 1, QTableWidgetItem(f"{position.position}"))
-            self.portfolio_table.setItem(row_position, 2, QTableWidgetItem(f"{position.last * position.position}"))
-            self.portfolio_table.setItem(row_position, 3, QTableWidgetItem(f"{position.avg_cost:.2f}"))
-            self.portfolio_table.setItem(row_position, 4, QTableWidgetItem(f"{position.last}"))
-            self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"{(position.last - position.close):.2f}"))
+            self.portfolio_table.setItem(row_position, 2, QTableWidgetItem(f"${position.last * position.position:.2f}"))
+            self.portfolio_table.setItem(row_position, 3, QTableWidgetItem(f"${position.avg_cost:.2f}"))
+            self.portfolio_table.setItem(row_position, 4, QTableWidgetItem(f"${position.last:.2f}"))
+            self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"${(position.last - position.close):.2f}"))
 
 
     # updates position price and change values
@@ -82,10 +82,10 @@ class PortfolioWidget(QWidget):
             position = self.app.portfolio_dict.get(symbol)
 
             self.portfolio_table.setItem(row, 1, QTableWidgetItem(f"{position.position}"))
-            self.portfolio_table.setItem(row, 2, QTableWidgetItem(f"{position.last * position.position}"))
-            self.portfolio_table.setItem(row, 3, QTableWidgetItem(f"{position.avg_cost:.2f}"))
-            self.portfolio_table.setItem(row, 4, QTableWidgetItem(f"{position.last}"))
-            self.portfolio_table.setItem(row, 5, QTableWidgetItem(f"{(position.last - position.close):.2f}"))
+            self.portfolio_table.setItem(row, 2, QTableWidgetItem(f"${position.last * position.position:.2f}"))
+            self.portfolio_table.setItem(row, 3, QTableWidgetItem(f"${position.avg_cost:.2f}"))
+            self.portfolio_table.setItem(row, 4, QTableWidgetItem(f"${position.last:.2f}"))
+            self.portfolio_table.setItem(row, 5, QTableWidgetItem(f"${(position.last - position.close):.2f}"))
 
     # updates available funds
     def update_available_funds(self):
