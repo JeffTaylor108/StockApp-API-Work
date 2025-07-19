@@ -131,7 +131,7 @@ class OrderEntryWidget(QWidget):
         self.preview_symbol = QLabel(f"Symbol: {self.stock_symbol_dropdown.currentText()}")
         order_preview_layout.addWidget(self.preview_symbol)
 
-        self.preview_order_type = QLabel("Order Type: ")
+        self.preview_order_type = QLabel(f"Order Type: {self.order_type_dropdown.currentText()}")
         order_preview_layout.addWidget(self.preview_order_type)
 
         self.preview_action = QLabel("Action: ")

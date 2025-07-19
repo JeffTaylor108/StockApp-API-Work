@@ -104,7 +104,7 @@ class ActivityWidget(QWidget):
 
         elif self.table_label.text() == "Active Orders":
 
-            for order in self.app.active_orders.values():
+            for order in list(self.app.active_orders.values()):
                 row_position = self.orders_table.rowCount()
                 self.orders_table.insertRow(row_position)
 

@@ -23,6 +23,7 @@ class StockApp(EWrapper, EClient, QObject):
     # creates a signal that triggers whenever method.emit() is called
     connected = pyqtSignal()
     stock_prices_updated = pyqtSignal()
+    portfolio_updated = pyqtSignal()
     portfolio_prices_updated = pyqtSignal()
     active_orders_updated = pyqtSignal()
     completed_orders_updated = pyqtSignal()
@@ -122,7 +123,6 @@ class StockApp(EWrapper, EClient, QObject):
     def nextValidId(self, orderId):
         self.nextOrderId = orderId
         self.connected.emit()
-        self.reqIds(-1)
 
     # -------------------------------------Account Endpoint------------------------------------------------------------
 
@@ -431,6 +431,9 @@ class StockApp(EWrapper, EClient, QObject):
 
         # updates available funds after order
         self.reqAccountSummary(self.getNextReqId(), "All", "AvailableFunds")
+
+        # updates portfolio after order is fulfilled
+        self.portfolio_updated.emit()
 
     def completedOrdersEnd(self):
         self.find_completed_orders_event.set()

@@ -31,8 +31,6 @@ def get_pnl(app):
 
 # requests positions of an account
 def currently_held_positions(app):
-
-    # requests positions for accessible account
     app.reqPositions()
 
 # gets stock symbols of positions in portfolio_dict

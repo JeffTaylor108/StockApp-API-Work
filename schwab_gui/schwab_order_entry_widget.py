@@ -153,10 +153,14 @@ class SchwabOrderEntryWidget(QWidget):
             self.market_data_controller.ws.close()
 
         symbol = self.symbol_input.text()
+        self.current_symbol = symbol
         self.market_data_controller.run_market_data_socket(symbol)
 
     # updates price data on data transmission
     def handle_websocket_update(self, data):
+
+        self.symbol_label.setText(self.current_symbol)
+
         for key in data:
             if key == '1':
                 bid_price = round(data[key], 2)

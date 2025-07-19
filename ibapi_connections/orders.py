@@ -54,6 +54,7 @@ def submit_order(app, contract, action, order_type, quantity, limit_price=None):
     print("Order: ", order.__dict__)
     try:
         app.placeOrder(app.nextOrderId, contract, order)
+        app.nextOrderId+=1
         print("Order placed.")
     except Exception as e:
         print("Error placing order:", e)

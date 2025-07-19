@@ -46,6 +46,7 @@ def authorize(returned_link):
     response = requests.post('https://api.schwabapi.com/v1/oauth/token', headers=headers, data=data)
 
     token_dict = response.json()
+    print(token_dict)
     access_token = token_dict['access_token'] # token lasts 30 mins, must be refreshed by refresh token
     refresh_token = token_dict['refresh_token'] # token lasts 1 week, after that auth must occur again
     token_dict['refresh_expire_time'] = time.time() + 604800 # current epoch time + 7 days in seconds
