@@ -136,3 +136,4 @@ class PortfolioWidget(QWidget):
             self.liquidate_portfolio()
         else:
             print("liquidation cancelled")
+

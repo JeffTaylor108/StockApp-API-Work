@@ -150,8 +150,9 @@ class StockApp(EWrapper, EClient, QObject):
             close = -1
         )
 
-        self.portfolio_dict[contract.symbol] = portfolio_obj
-        self.portfolio_list.append(portfolio_obj)
+        if portfolio_obj.position != 0.0:
+            self.portfolio_dict[contract.symbol] = portfolio_obj
+            self.portfolio_list.append(portfolio_obj)
 
     def positionEnd(self):
         self.find_portfolio_event.set()
@@ -432,6 +433,9 @@ class StockApp(EWrapper, EClient, QObject):
         # updates available funds after order
         self.reqAccountSummary(self.getNextReqId(), "All", "AvailableFunds")
 
+        # updates portfolio if user holds 0 positions of that contract
+        self.check_for_zero_positions(contract)
+
         # updates portfolio after order is fulfilled
         self.portfolio_updated.emit()
 
@@ -535,6 +539,20 @@ class StockApp(EWrapper, EClient, QObject):
             close=None,
             volume=None
         )
+
+    # TWS doesn't automatically clear portfolio when positions=0, so this checks for that and clears it on our app's end
+    def check_for_zero_positions(self, contract):
+        if contract.symbol in self.portfolio_dict:
+            portfolio_obj = self.portfolio_dict[contract.symbol]
+            if portfolio_obj.positions == 0.0:
+                self.portfolio_dict.pop(contract.symbol, None)
+                print(f'Removed {contract.symbol} from portfolio dict due to having 0 positions')
+
+                for stock in self.portfolio_list:
+                    if stock.symbol == contract.symbol:
+                        self.portfolio_list.remove(stock)
+                        print(f'Removed {stock.symbol} from portfolio due to having 0 positions')
+                        break
 
 
 # data objects

@@ -321,25 +321,26 @@ class SchwabPriceHistoryGraphWidget(QWidget):
             return
 
         for order in prev_orders:
-            price = order['individual_price']
+            if order['symbol'] == self.symbol_input.text():
+                price = order['individual_price']
 
-            # draws green line across y-axis at price where buy order occurred
-            if order['action'] == 'BUY':
-                line = pg.InfiniteLine(
-                    pos=price,
-                    angle=0,
-                    pen=pg.mkPen(color=(0, 255, 0), width=2, style=Qt.PenStyle.DashLine),
-                    label='BUY: ${:.2f}'.format(price),
-                    labelOpts={'position': 0.90, 'color': (0, 200, 0)}
-                )
-                self.price_history_graph.addItem(line)
-            # draws red line across y-axis at price where sell order occurred
-            elif order['action'] == 'SELL':
-                line = pg.InfiniteLine(
-                    pos=price,
-                    angle=0,
-                    pen=pg.mkPen(color=(255, 0, 0), width=2, style=Qt.PenStyle.DashLine),
-                    label='SELL: ${:.2f}'.format(price),
-                    labelOpts={'position': 0.90, 'color': (200, 0, 0)}
-                )
-                self.price_history_graph.addItem(line)
+                # draws green line across y-axis at price where buy order occurred
+                if order['action'] == 'BUY':
+                    line = pg.InfiniteLine(
+                        pos=price,
+                        angle=0,
+                        pen=pg.mkPen(color=(0, 255, 0), width=2, style=Qt.PenStyle.DashLine),
+                        label='BUY: ${:.2f}'.format(price),
+                        labelOpts={'position': 0.90, 'color': (0, 200, 0)}
+                    )
+                    self.price_history_graph.addItem(line)
+                # draws red line across y-axis at price where sell order occurred
+                elif order['action'] == 'SELL':
+                    line = pg.InfiniteLine(
+                        pos=price,
+                        angle=0,
+                        pen=pg.mkPen(color=(255, 0, 0), width=2, style=Qt.PenStyle.DashLine),
+                        label='SELL: ${:.2f}'.format(price),
+                        labelOpts={'position': 0.90, 'color': (200, 0, 0)}
+                    )
+                    self.price_history_graph.addItem(line)

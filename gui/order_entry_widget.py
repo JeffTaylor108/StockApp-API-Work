@@ -399,6 +399,9 @@ class OrderEntryWidget(QWidget):
         if self.profit_taker_dropdown.currentText() != "---":
             dropdown_text = self.profit_taker_dropdown.currentText()
             percentage = re.search(r'(\d+)%', dropdown_text)
+            if not percentage:
+                print("No percentage found in dropdown text")
+                return
             percentage = percentage.group(1)
 
             checked_button = self.buy_sell_group.checkedButton()
@@ -408,7 +411,7 @@ class OrderEntryWidget(QWidget):
                     price_text = self.ask_price.text()
 
                     # checks if ask price is unavailable
-                    if price_text.contains('Market Closed'):
+                    if 'Market Closed' in price_text:
                         price_text = self.last_traded_price.text()
 
                     _, _, price = price_text.partition("$")
@@ -429,6 +432,9 @@ class OrderEntryWidget(QWidget):
         if self.stop_loss_dropdown.currentText() != "---":
             dropdown_text = self.stop_loss_dropdown.currentText()
             percentage = re.search(r'(\d+)%', dropdown_text)
+            if not percentage:
+                print("No percentage found in dropdown text")
+                return
             percentage = percentage.group(1)
 
             checked_button = self.buy_sell_group.checkedButton()
@@ -438,7 +444,7 @@ class OrderEntryWidget(QWidget):
                     price_text = self.ask_price.text()
 
                     # checks if ask price is unavailable
-                    if price_text.contains('Market Closed'):
+                    if 'Market Closed' in price_text:
                         price_text = self.last_traded_price.text()
 
                     _, _, price = price_text.partition("$")
