@@ -72,7 +72,7 @@ class ActivityWidget(QWidget):
         self.table_label.setText("Completed Orders")
 
         get_completed_orders(self.app)
-        for order in self.app.completed_orders:
+        for order in self.app.completed_orders.values():
 
             row_position = self.orders_table.rowCount()
             self.orders_table.insertRow(row_position)
@@ -80,7 +80,7 @@ class ActivityWidget(QWidget):
             self.orders_table.setItem(row_position, 0, QTableWidgetItem(order.symbol))
             self.orders_table.setItem(row_position, 1, QTableWidgetItem(order.action))
             self.orders_table.setItem(row_position, 2, QTableWidgetItem(order.type))
-            self.orders_table.setItem(row_position, 3, QTableWidgetItem(f"0/{str(order.quantity)}"))
+            self.orders_table.setItem(row_position, 3, QTableWidgetItem(f"{str(order.quantity)}/{str(order.quantity)}"))
             self.orders_table.setItem(row_position, 4, QTableWidgetItem(str(order.fill_price)))
             self.orders_table.setItem(row_position, 5, QTableWidgetItem(order.status))
             self.orders_table.setItem(row_position, 6, QTableWidgetItem(""))
@@ -90,14 +90,14 @@ class ActivityWidget(QWidget):
         self.orders_table.setRowCount(0)
         if self.table_label.text() == "Completed Orders":
 
-            for order in self.app.completed_orders:
+            for order in self.app.completed_orders.values():
                 row_position = self.orders_table.rowCount()
                 self.orders_table.insertRow(row_position)
 
                 self.orders_table.setItem(row_position, 0, QTableWidgetItem(order.symbol))
                 self.orders_table.setItem(row_position, 1, QTableWidgetItem(order.action))
                 self.orders_table.setItem(row_position, 2, QTableWidgetItem(order.type))
-                self.orders_table.setItem(row_position, 3, QTableWidgetItem(f"0/{str(order.quantity)}"))
+                self.orders_table.setItem(row_position, 3, QTableWidgetItem(f"{str(order.quantity)}/{str(order.quantity)}"))
                 self.orders_table.setItem(row_position, 4, QTableWidgetItem(str(order.fill_price)))
                 self.orders_table.setItem(row_position, 5, QTableWidgetItem(order.status))
                 self.orders_table.setItem(row_position, 6, QTableWidgetItem(""))

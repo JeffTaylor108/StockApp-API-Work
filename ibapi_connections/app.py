@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from ibapi.client import *
@@ -101,7 +102,7 @@ class StockApp(EWrapper, EClient, QObject):
         # variables for order activity
         self.find_completed_orders_event = threading.Event()
         self.find_active_orders_event = threading.Event()
-        self.completed_orders = []
+        self.completed_orders = {}
         self.active_orders = {}
 
         # variables for market scanner
@@ -150,9 +151,8 @@ class StockApp(EWrapper, EClient, QObject):
             close = -1
         )
 
-        if portfolio_obj.position != 0.0:
-            self.portfolio_dict[contract.symbol] = portfolio_obj
-            self.portfolio_list.append(portfolio_obj)
+        self.portfolio_dict[contract.symbol] = portfolio_obj
+        self.portfolio_list.append(portfolio_obj)
 
     def positionEnd(self):
         self.find_portfolio_event.set()
@@ -230,10 +230,12 @@ class StockApp(EWrapper, EClient, QObject):
 
             if tickType == 68:
                 self.portfolio_dict.get(symbol).last = price
+                self.portfolio_prices_updated.emit()
                 print(f"Last bid price for {symbol} changed to ", price)
 
             elif tickType == 75:
                 self.portfolio_dict.get(symbol).close = price
+                self.portfolio_prices_updated.emit()
                 print(f"Close price for {symbol} changed to ", price)
 
             if self.portfolio_dict.get(symbol).last != -1 and self.portfolio_dict.get(symbol).close != -1:
@@ -241,6 +243,7 @@ class StockApp(EWrapper, EClient, QObject):
                 if event and not event.is_set():
                     event.set()
                 self.portfolio_prices_updated.emit()
+                print(f"complete price data received for {symbol} in portfolio")
 
         # handles market data requests for market scanner data
         elif reqId in self.scanner_contract_req_ids:
@@ -399,53 +402,69 @@ class StockApp(EWrapper, EClient, QObject):
 
     def openOrderEnd(self):
         self.find_active_orders_event.set()
+
         print("All open orders received")
 
     # responds with details on order whenever the status of an order changes
     def orderStatus(self, orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
 
-        # when an order is cancelled, moves it from active dictionary to completed list
+        # when an order is cancelled, moves it from active dictionary to completed dictionary
         print("Status: ", {status})
         if status == "Cancelled":
             order = self.active_orders.get(orderId)
             self.active_orders.pop(orderId)
-            self.completed_orders.append(order)
+            self.completed_orders[orderId] = order
             self.active_orders_updated.emit()
             print(f"Order {orderId} cancelled")
+
+        if status == "Filled":
+
+            # moves order from active dictionary to completed dictionary when filled
+            order = self.active_orders.get(orderId)
+            self.active_orders.pop(orderId)
+            order.quantity = filled
+            order.fill_price = avgFillPrice
+            self.completed_orders[orderId] = order
+
+            # updates portfolio and active orders after order is fulfilled
+            self.portfolio_updated.emit()
+            self.active_orders_updated.emit()
+
+            # updates available funds after order
+            self.reqAccountSummary(self.getNextReqId(), "All", "AvailableFunds")
 
         print(f"Order Status: orderId: {orderId}, status: {status}, filled: {filled}, remaining: {remaining}, avgFillPrice: {avgFillPrice}, and more not printed")
 
     # response with details on all completed orders
     def completedOrder(self, contract: Contract, order: Order, orderState: OrderState):
 
-        self.completed_orders.append(CompletedOrders (
-            order_id = order.orderId,
-            symbol = contract.symbol,
-            status = orderState.status,
-            action = order.action,
-            type = order.orderType,
-            quantity = order.totalQuantity,
-            fill_price = order.lmtPrice
-        ))
+        # regex for extracting quantity filled from orderState
+        match = re.search(r"Size:\s*(\d+)", orderState.completedStatus)
+
+        if match:
+            filled_quantity = int(match.group(1))
+        else:
+            filled_quantity = 0
+
+        # checks for duplicate orders
+        if order.orderId not in self.completed_orders.values():
+
+            self.completed_orders[order.orderId] = CompletedOrders (
+                order_id = order.orderId,
+                symbol = contract.symbol,
+                status = orderState.status,
+                action = order.action,
+                type = order.orderType,
+                quantity = filled_quantity,
+                fill_price = order.lmtPrice
+            )
 
         print(f"Completed Orders: contract: {contract}, order: {order}, order state: {orderState}")
 
-        # updates available funds after order
-        self.reqAccountSummary(self.getNextReqId(), "All", "AvailableFunds")
-
-        # updates portfolio if user holds 0 positions of that contract
-        self.check_for_zero_positions(contract)
-
-        # updates portfolio after order is fulfilled
-        self.portfolio_updated.emit()
-
     def completedOrdersEnd(self):
         self.find_completed_orders_event.set()
-        print("All completed orders received")
 
-    # responds with details on order when executed
-    def execDetailsEnd(self, reqId, contract, execution):
-        print(f"Exec details: reqId: {reqId}, contract: {contract}, execution: {execution}")
+        print("All completed orders received")
 
 
 #--------------------------------Historical Data Graphs Endpoint--------------------------------------------------------------------
@@ -539,21 +558,6 @@ class StockApp(EWrapper, EClient, QObject):
             close=None,
             volume=None
         )
-
-    # TWS doesn't automatically clear portfolio when positions=0, so this checks for that and clears it on our app's end
-    def check_for_zero_positions(self, contract):
-        if contract.symbol in self.portfolio_dict:
-            portfolio_obj = self.portfolio_dict[contract.symbol]
-            if portfolio_obj.positions == 0.0:
-                self.portfolio_dict.pop(contract.symbol, None)
-                print(f'Removed {contract.symbol} from portfolio dict due to having 0 positions')
-
-                for stock in self.portfolio_list:
-                    if stock.symbol == contract.symbol:
-                        self.portfolio_list.remove(stock)
-                        print(f'Removed {stock.symbol} from portfolio due to having 0 positions')
-                        break
-
 
 # data objects
 @dataclass

@@ -71,17 +71,21 @@ class PortfolioWidget(QWidget):
 
         for position in self.app.portfolio_dict.values():
 
-            get_portfolio_price_stream(self.app, position.contract)
+            print(f'Filling {position} in for portfolio table')
 
-            row_position = self.portfolio_table.rowCount()
-            self.portfolio_table.insertRow(row_position)
+            # table won't display items on portfolio if user holds 0 positions of it (TWS won't remove stock from portfolio automatically)
+            if position.position != 0.0:
+                get_portfolio_price_stream(self.app, position.contract)
 
-            self.portfolio_table.setItem(row_position, 0, QTableWidgetItem(position.contract.symbol))
-            self.portfolio_table.setItem(row_position, 1, QTableWidgetItem(f"{position.position}"))
-            self.portfolio_table.setItem(row_position, 2, QTableWidgetItem(f"${position.last * position.position:.2f}"))
-            self.portfolio_table.setItem(row_position, 3, QTableWidgetItem(f"${position.avg_cost:.2f}"))
-            self.portfolio_table.setItem(row_position, 4, QTableWidgetItem(f"${position.last:.2f}"))
-            self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"${(position.last - position.close):.2f}"))
+                row_position = self.portfolio_table.rowCount()
+                self.portfolio_table.insertRow(row_position)
+
+                self.portfolio_table.setItem(row_position, 0, QTableWidgetItem(position.contract.symbol))
+                self.portfolio_table.setItem(row_position, 1, QTableWidgetItem(f"{position.position}"))
+                self.portfolio_table.setItem(row_position, 2, QTableWidgetItem(f"${position.last * position.position:.2f}"))
+                self.portfolio_table.setItem(row_position, 3, QTableWidgetItem(f"${position.avg_cost:.2f}"))
+                self.portfolio_table.setItem(row_position, 4, QTableWidgetItem(f"${position.last:.2f}"))
+                self.portfolio_table.setItem(row_position, 5, QTableWidgetItem(f"${(position.last - position.close):.2f}"))
 
 
     # updates position price and change values

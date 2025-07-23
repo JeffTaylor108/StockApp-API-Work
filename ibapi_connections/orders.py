@@ -73,7 +73,6 @@ def get_active_orders(app):
 def get_completed_orders(app):
 
     app.find_completed_orders_event.clear()
-    app.completed_orders = []
 
     app.reqCompletedOrders(True)
     if app.find_completed_orders_event.wait(timeout=5):
@@ -128,8 +127,6 @@ def submit_bracket_order(app, contract, action, order_type, quantity, take_profi
         print("Bracket Order placed.")
     except Exception as e:
         print("Error placing order:", e)
-
-
 
 def cancel_order(app, order_id):
     app.cancelOrder(order_id, OrderCancel())
