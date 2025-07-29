@@ -1,11 +1,6 @@
 import sys
-import time
-import threading
 
-from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QApplication
-
-from ibapi_connections.app import StockApp
 from schwab_gui.schwab_auth_window import SchwabAuthWindow
 
 
@@ -26,11 +21,6 @@ def main():
     # # checks if app connected
     # print(f"App is connected: {app.isConnected()}")
     # ------------------------------------------------------------------
-
-    # initalizes TWS GUI
-    # gui = QApplication(sys.argv)
-    # window = MainWindow(app)
-    # window.show()
 
     # initializes GUI
     gui = QApplication(sys.argv)

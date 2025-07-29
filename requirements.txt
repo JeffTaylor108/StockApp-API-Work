@@ -1,0 +1,9 @@
+ibapi==10.36.2
+numpy==2.3.2
+pymongo==4.13.2
+PyQt6==6.9.1
+PyQt6_sip==13.10.0
+pyqtgraph==0.13.7
+python-dotenv==1.1.1
+Requests==2.32.4
+websocket_client==1.8.0

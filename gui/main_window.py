@@ -1,10 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout, QFrame, \
-    QDialog, QDialogButtonBox, QHBoxLayout, QTabWidget
-from PyQt6.QtCore import QSize, Qt, pyqtSignal
-
-import sys
-
-from ibapi.contract import Contract
+from PyQt6.QtWidgets import QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QTabWidget
 
 from gui.activity_widget import ActivityWidget
 from gui.market_scanner_widget import MarketScannerWidget
@@ -14,9 +8,6 @@ from gui.stock_data_widget import StockDataWidget
 from gui.stock_graph_widget import StockGraphWidget
 from gui.stock_news_widget import StockNewsWidget
 from gui.trade_app_selection import TradeAppSelectionWidget
-from ibapi_connections.contract_data import req_contract_from_symbol
-from ibapi_connections.market_data import get_live_prices_and_volume
-from ibapi_connections.news import get_news_headlines
 
 
 class MainWindow(QMainWindow):

@@ -249,7 +249,7 @@ class OrderEntryWidget(QWidget):
             if self.buy_sell_group.checkedButton().text() == "BUY":
 
                 # uses last price if market closed
-                if self.app.market_data.ask != 0:
+                if self.app.market_data.ask != -1:
                     buy_cost = round(self.app.market_data.ask * int(self.quantity.text()), 2)
 
                     self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.ask}")
@@ -263,7 +263,7 @@ class OrderEntryWidget(QWidget):
             elif self.buy_sell_group.checkedButton().text() == "SELL":
 
                 # uses last price if market closed
-                if self.app.market_data.bid != 0:
+                if self.app.market_data.bid != -1:
                     sell_price = round(self.app.market_data.bid * int(self.quantity.text()), 2)
 
                     self.preview_individual_price.setText(f"Individual Price: ${self.app.market_data.bid}")
@@ -391,8 +391,8 @@ class OrderEntryWidget(QWidget):
 
             for i in range(1, 11):
                 formatted_price = f"{round(i * 0.10 * 100)}%"
-                self.profit_taker_dropdown.addItem(f"BID + {formatted_price}")
-                self.stop_loss_dropdown.addItem(f"BID - {formatted_price}")
+                self.profit_taker_dropdown.addItem(f"BID - {formatted_price}")
+                self.stop_loss_dropdown.addItem(f"BID + {formatted_price}")
 
     # sets profit taker input to what was selected from dropdown
     def set_profit_taker_from_dropdown(self):
@@ -419,6 +419,11 @@ class OrderEntryWidget(QWidget):
 
                 if checked_button.text() == "SELL":
                     price_text = self.bid_price.text()
+
+                    # checks if bid price is unavailable
+                    if 'Market Closed' in price_text:
+                        price_text = self.last_traded_price.text()
+
                     _, _, price = price_text.partition("$")
                     input_text = round(float(price) + round((float(percentage) / 100) * float(price), 2), 2)
 

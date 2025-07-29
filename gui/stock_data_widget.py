@@ -52,7 +52,7 @@ class StockDataWidget(QWidget):
         # fonts/styling
         widget_label.setFont(styling.heading_font)
 
-    # make sure this is retrieving data from the right stream
+    # requests live data stream including stock prices and volume
     def get_stock_selected(self):
         symbol = self.stock_symbol_dropdown.currentText()
         self.stock_symbol_selected = symbol

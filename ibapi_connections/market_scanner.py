@@ -1,4 +1,4 @@
-from mongodb_connection.IBKR_market_scanners import mongo_insert_market_scanner, update_req_id
+from mongodb_connection.IBKR_market_scanners import mongo_insert_market_scanner
 
 # writes valid parameters for TWS scanner to xml file
 def req_scanner_params(app):

@@ -5,11 +5,9 @@ from ibapi.client import *
 from ibapi.scanner import ScanData
 from ibapi.wrapper import *
 from ibapi.contract import *
-import time
 from ibapi.order import *
 import threading
 from PyQt6.QtCore import pyqtSignal, QObject
-import datetime
 from dataclasses import dataclass, asdict
 
 from mongodb_connection.mongo_client import initialize_mongo_client
@@ -502,9 +500,9 @@ class StockApp(EWrapper, EClient, QObject):
 
 # -----------------------------------Market Depth Endpoint---------------------------------------------------------------
 
-# requires monthly subscription to function
+# requires monthly subscription to function, currently not in use
 
-    # receives level 2 market data
+    # receives level 2 market dats
     def updateMktDepthL2(
         self,
         reqId: TickerId,

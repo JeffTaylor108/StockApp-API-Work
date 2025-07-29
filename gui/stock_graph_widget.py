@@ -84,15 +84,15 @@ class StockGraphWidget(QWidget):
             return
 
         # Process all candles and separate by type for batch processing
-        self._create_optimized_candlesticks_tws(data)
+        self.create_optimized_candlesticks(data)
 
         # Set up x-axis labels efficiently
-        self._setup_axis_labels_tws(data)
+        self.setup_axis_labels(data)
 
         self.market_data_graph.enableAutoRange()
         print(f"Successfully plotted {len(data)} candles")
 
-    def _create_optimized_candlesticks_tws(self, data):
+    def create_optimized_candlesticks(self, data):
         """Highly optimized candlestick chart using batched drawing operations for TWS data"""
 
         if not data:
@@ -155,20 +155,20 @@ class StockGraphWidget(QWidget):
 
         # Draw bullish candles in batches
         if bullish_bodies:
-            self._draw_candle_bodies_tws(bullish_bodies, bullish_color, candle_width)
+            self.draw_candle_bodies(bullish_bodies, bullish_color, candle_width)
 
         if bearish_bodies:
-            self._draw_candle_bodies_tws(bearish_bodies, bearish_color, candle_width)
+            self.draw_candle_bodies(bearish_bodies, bearish_color, candle_width)
 
         # Draw wicks in batches
-        self._draw_wick_lines_tws(bullish_wicks, bullish_pen)
-        self._draw_wick_lines_tws(bearish_wicks, bearish_pen)
+        self.draw_wick_lines(bullish_wicks, bullish_pen)
+        self.draw_wick_lines(bearish_wicks, bearish_pen)
 
         # Draw doji lines
         if doji_lines:
-            self._draw_doji_lines_tws(doji_lines, bullish_pen)
+            self.draw_doji_lines(doji_lines, bullish_pen)
 
-    def _draw_candle_bodies_tws(self, bodies, color, width):
+    def draw_candle_bodies(self, bodies, color, width):
         """Draw candle bodies efficiently using single BarGraphItem"""
         if not bodies:
             return
@@ -188,7 +188,7 @@ class StockGraphWidget(QWidget):
         )
         self.plot_item.addItem(bars)
 
-    def _draw_wick_lines_tws(self, wick_data, pen):
+    def draw_wick_lines(self, wick_data, pen):
         """Draw wick lines efficiently using numpy arrays"""
         if not wick_data:
             return
@@ -219,7 +219,7 @@ class StockGraphWidget(QWidget):
             )
             self.plot_item.addItem(wick_plot)
 
-    def _draw_doji_lines_tws(self, doji_data, pen):
+    def draw_doji_lines(self, doji_data, pen):
         """Draw doji lines efficiently"""
         if not doji_data or len(doji_data) < 2:
             return
@@ -251,7 +251,7 @@ class StockGraphWidget(QWidget):
             )
             self.plot_item.addItem(doji_plot)
 
-    def _setup_axis_labels_tws(self, data):
+    def setup_axis_labels(self, data):
         """Efficiently set up x-axis labels with optimal spacing"""
         if not data:
             return

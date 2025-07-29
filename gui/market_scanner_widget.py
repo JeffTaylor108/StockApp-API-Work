@@ -1,7 +1,5 @@
-import time
 import xml.etree.ElementTree as ET
 
-from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QGroupBox, QListWidget, \
     QListWidgetItem, QHBoxLayout, QTableWidget, QTabWidget, QTableWidgetItem
 from PyQt6.QtGui import QColor, QBrush
@@ -27,7 +25,7 @@ class MarketScannerWidget(QWidget):
         self.tag_code_to_display_name = {}
         self.symbol_to_row_maps = {} # stores row table mappings of symbol to row
         self.scanner_tables = {} # display name references QTableWidget
-        self.current_table_req_id = None # keeps track of which table is selected for resource management
+        self.current_tab_req_id = None # keeps track of which table is selected for resource management
 
         # widgets added to layout
         widget_label = QLabel("Market Scanners")
@@ -263,7 +261,7 @@ class MarketScannerWidget(QWidget):
 
     # fills tag_category_selector with valid tags and adds them to dictionary matching display names to code names
     def find_valid_tag_categories(self):
-        tree = ET.parse('scanner.xml')
+        tree = ET.parse('ibapi_connections/scanner.xml')
         root = tree.getroot()
 
         # filters that can be used with STK instruments
@@ -350,16 +348,16 @@ class MarketScannerWidget(QWidget):
 
         # req_id for the new tab
         new_tab_req_id = self.scanner_tabs.tabBar().tabData(index)
-        if new_tab_req_id == self.current_table_req_id:
+        if new_tab_req_id == self.current_tab_req_id:
             return
 
         # closes subscription for previous tab
-        if self.current_table_req_id is not None:
-            cancel_subscription(self.app, self.current_table_req_id)
-            stop_mkt_data_stream(self.app, self.current_table_req_id)
-            print(f"Closed subscription for scanner {self.current_table_req_id}")
+        if self.current_tab_req_id is not None:
+            cancel_subscription(self.app, self.current_tab_req_id)
+            stop_mkt_data_stream(self.app, self.current_tab_req_id)
+            print(f"Closed subscription for scanner {self.current_tab_req_id}")
 
-        self.current_table_req_id = new_tab_req_id
+        self.current_tab_req_id = new_tab_req_id
 
         # reopen subscription for new tab
         scanner_data = mongo_fetch_matching_scanner(self.app.client, new_tab_req_id)

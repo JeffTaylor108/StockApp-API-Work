@@ -100,6 +100,7 @@ def get_scanner_mkt_data(app, contract, scanner_req_id):
 
 
 # requests level 2 market data
+# currently not in use anywhere
 def get_level2_market_data(app, contract):
 
     req_id = app.getNextReqId()

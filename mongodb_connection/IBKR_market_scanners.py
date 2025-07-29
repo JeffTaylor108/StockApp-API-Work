@@ -36,13 +36,6 @@ def mongo_fetch_matching_scanner(client, req_id):
     market_scanner = market_scanner_collection.find_one({"req_id": req_id})
     return market_scanner
 
-# updates req id of scanner
-def update_req_id(client, req_id, object_id:ObjectId):
-    market_scanner_collection = client.IBKR_DB.market_scanners
-
-    market_scanner_collection.update_one({"_id": object_id}, {"$set": {"req_id": req_id}})
-    print(f"Updated scanner with id {object_id} to have req_id {req_id}")
-
 # finds display name of scanner from req id
 def mongo_fetch_scanner_name(client, req_id):
     market_scanner_collection = client.IBKR_DB.market_scanners

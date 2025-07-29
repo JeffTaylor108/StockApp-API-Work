@@ -23,7 +23,6 @@ def get_news_headlines(app, contract):
     app.articles_found.clear()
     app.find_articles_event.clear()
 
-    app.reqNewsProviders()
     today = datetime.date.today()
     app.reqHistoricalNews(app.getNextReqId(), contract.conId, "BRFG+BRFUPDN+DJNL", today, "", 10, [])
 
