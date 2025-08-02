@@ -201,7 +201,3 @@ Switch from Portfolio to Market Scanner tab to access scanning tools.
 - Scanner information and active filters shown on the right
 
 > ⚠️ **Performance Note**: More active scanners may reduce performance due to TWS rate limits.
-
-## Support
-
-For technical issues or questions about the application, please contact the development team or refer to your broker's API documentation for account-specific concerns.
