@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from decimal import Decimal
 
 from ibapi.client import *
 from ibapi.scanner import ScanData

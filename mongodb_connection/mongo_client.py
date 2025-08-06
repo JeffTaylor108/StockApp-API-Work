@@ -5,7 +5,7 @@ from pymongo.mongo_client import MongoClient
 
 
 def initialize_mongo_client():
-    # get mongo URI from env
+    # get mongo URI from .env
     load_dotenv()
     uri = os.getenv("MONGO_URI")
 

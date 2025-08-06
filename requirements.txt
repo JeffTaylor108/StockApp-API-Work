@@ -1,5 +1,5 @@
-ibapi==10.36.2
-numpy==2.0.2
+# ibapi installed manually from IBKR TWS API (not from PyPI)
+
 pymongo==4.13.2
 PyQt6==6.9.1
 PyQt6_sip==13.10.0
