@@ -24,7 +24,7 @@ class StockGraphWidget(QWidget):
         self.stock_dropdown.addItems(['AAPL', 'TSLA', 'AMZN', 'NVDA', 'GOOGL'])
         self.stock_dropdown.setEditable(True)
         self.stock_dropdown.setInsertPolicy(QComboBox.InsertPolicy.InsertAtTop)
-        self.stock_dropdown.currentTextChanged.connect(self.create_candlestick_graph)
+        self.stock_dropdown.activated.connect(self.create_candlestick_graph)
         self.app.stock_symbol_changed.connect(self.handle_symbol_change_signal)
 
         # graph period dropdown
