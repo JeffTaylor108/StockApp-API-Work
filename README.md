@@ -4,12 +4,54 @@ A comprehensive trading application that integrates Interactive Brokers TWS (Tra
 
 ## Prerequisites
 
-Before running the application, ensure you have:
+Before the app can run, these requirements must be met:
 
-- **Interactive Broker's TWS** installed and running on your desktop
-- **Active Schwab account** with API access enabled
+## System Requirements
 
-> ⚠️ **Note**: Outside of pre-market and after-hours trading sessions, the app may not behave as expected.
+- **IDE**: Python-capable IDE (PyCharm recommended, VS Code also works)
+- **Trading Platform**: Trader Workstation (TWS) from Interactive Brokers, properly configured to accept API requests
+- **Brokerage Account**: Valid Schwab account configured for authentication
+- **Environment File**: `.env` file added to the root directory of the project (if not already present)
+
+## Python Dependencies
+
+Install the required dependencies using the `requirements.txt` file:
+
+```bash
+pip install -r requirements.txt
+```
+
+If the above command doesn't work, try:
+
+```bash
+pip3 install -r requirements.txt
+```
+
+## Installing the IBAPI Library
+
+The Interactive Brokers API library cannot be installed via pip and must be installed manually:
+
+### Step-by-Step Installation
+
+1. **Download the API**: Install TWS API Stable from [https://interactivebrokers.github.io/](https://interactivebrokers.github.io/)
+
+2. **Locate Python Client**: Find the `python-client` folder in the downloaded API package and copy its file path
+
+3. **Navigate to Directory**: Open terminal in your project directory and run:
+   ```bash
+   cd [file path]
+   ```
+   *Note: File path may need to be enclosed in quotation marks*
+
+4. **Install Library**: Run the following command to install the API library to your virtual environment:
+   ```bash
+   pip install .
+   ```
+
+### Additional Support
+
+For comprehensive setup guidance, refer to the official Interactive Brokers API documentation:
+[https://interactivebrokers.github.io/tws-api/initial_setup.html](https://interactivebrokers.github.io/tws-api/initial_setup.html)
 
 ## Getting Started
 
